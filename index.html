@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sudoku Sage</title>
+  <link rel="icon" type="image/svg+xml" href="images/file.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="loadingScreen" class="loading-screen" aria-live="polite">
+    <div class="poster pulse zoom-card" role="button" tabindex="0" aria-label="Enter Sudoku Sage">
+      <img src="images/logo.jpg" alt="Sudoku logo" class="poster-logo" />
+      <h1>Sudoku Zen Quest</h1>
+      <p>Tap to Enter the Temple Puzzle</p>
+    </div>
+  </div>
+
+  <button id="menuToggle" class="menu-toggle" aria-label="Open side menu">☰</button>
+  <button id="leaderboardIcon" class="leaderboard-icon" aria-label="Open leaderboard">👑</button>
+
+  <aside id="sideBar" class="sidebar">
+    <div class="side-head">
+      <h2 aria-hidden="true"></h2>
+      <button id="closeMenu" aria-label="Close side menu">✕</button>
+    </div>
+    <nav>
+      <button class="nav-btn" data-page="homePage">📜 Home</button>
+      <button class="nav-btn" data-page="gamePage">📜 Game Modes</button>
+      <button class="nav-btn" data-page="dailyPage">📜 Tutorials</button>
+      <button class="nav-btn" data-page="leaderboardPage">📜 Leaderboard</button>
+      <button class="nav-btn" data-page="aboutPage">📜 About</button>
+      <button class="nav-btn" data-page="settingsPage">📜 Settings</button>
+    </nav>
+
+    <div class="sidebar-meta">
+      <div>🔥 Streak: <span id="streakCount">0</span></div>
+      <label class="switch" title="Toggle day/night mode">
+        <input type="checkbox" id="themeToggle" />
+        <span class="slider"></span>
+      </label>
+    </div>
+  </aside>
+
+  <main id="app" class="app hidden">
+    <header class="topbar parchment">
+      <h1 class="title-aged">SUDOKU SAGE</h1>
+      <p class="subtitle-aged">Introduction to AI (CSE11112) | Adamas University</p>
+    </header>
+
+    
+    <section id="homePage" class="page card parchment">
+      <h2>AI‑powered Sudoku companion</h2>
+      <p>AI‑powered Sudoku companion — solve puzzles instantly or play manually with a beautiful brownish board.</p>
+      <h3>📜 History of Sudoku</h3>
+      <p>The modern Sudoku we know was popularized in 1986 by the Japanese puzzle company Nikoli, under the name "Sūji wa dokushin ni kagiru" (数字は独身に限る), meaning "the digits must be single". However, its roots trace back to 18th-century Switzerland where mathematician Leonhard Euler developed "Latin Squares". The puzzle as we know it first appeared in a 1979 Dell magazine under the name "Number Place".</p>
+      <h3>🌏 Origin Country</h3>
+      <p>Sudoku's global fame originated in Japan, where it was refined and named. The word "Sudoku" is a Japanese abbreviation meaning "single number". Today, it is enjoyed worldwide as a brain‑training classic.</p>
+      <h3>✨ Interesting Facts</h3>
+      <ul>
+        <li>There are 6,670,903,752,021,072,936,960 possible 9x9 Sudoku grids (that's 6.67×10²¹!).</li>
+        <li>The world's hardest Sudoku puzzle, created by Arto Inkala in 2006, requires advanced solving techniques.</li>
+        <li>Solving Sudoku regularly can improve concentration, memory, and logical thinking.</li>
+      </ul>
+      <h3>🤖 Our AI Methods</h3>
+      <p>Backtracking Algorithm – A depth‑first search that tries numbers one by one and backtracks when a conflict occurs. It guarantees finding a solution if one exists.</p>
+      <p>Forward Checking – We simulate this by validating each move against row, column, and box constraints in real time, pruning invalid branches early. Read about Forward Checking.</p>
+      <p>Our AI solver uses recursive backtracking with constraint propagation, ensuring optimal solving speed. The manual mode validates every user input instantly, giving immediate feedback.</p>
+    </section>
+
+    <section id="gamePage" class="page hidden card parchment">
+      <section class="hud card parchment">
+        <div><strong>Board:</strong> <span id="sizeLabel">9×9</span></div>
+        <div><strong>Mode:</strong> <span id="modeLabel">Manual</span></div>
+        <div><strong>Timer:</strong> <span id="countdown">25:00</span></div>
+        <div><strong>AI Time:</strong> <span id="aiTime">0.000s</span></div>
+        <div><strong>Daily:</strong> <span id="dailyStatus">Not loaded</span></div>
+      </section>
+
+      <section class="controls card parchment">
+        <div class="row">
+          <label>Mode<select id="modeSelect"><option value="manual">Manual</option><option value="ai">AI</option></select></label>
+          <label>Board<select id="sizeSelect"><option value="4">4×4</option><option value="9" selected>9×9</option><option value="16">16×16</option></select></label>
+          <label>Difficulty<select id="difficultySelect"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></label>
+          <label>Player<input id="username" type="text" maxlength="24" placeholder="Player name" /></label>
+          <label>Region<input id="regionInput" type="text" maxlength="24" placeholder="Region" value="Global" /></label>
+        </div>
+        <div class="row buttons game-buttons">
+          <button id="newBtn">🧩 New Game</button>
+          <button id="shuffleBtn">🔀 Shuffle</button>
+          <button id="solveBtn">🤖 Solve (AI)</button>
+          <button id="checkBtn">✅ Check</button>
+        </div>
+        <div class="row buttons game-buttons">
+          <button id="startBtn">▶️ Start</button>
+          <button id="pauseBtn">⏸ Pause</button>
+        </div>
+      </section>
+
+      <section class="board-wrap card parchment" id="gameBoardPanel">
+        <div id="gridContainer" class="sudoku-grid" role="grid" aria-label="Sudoku board"></div>
+        <p id="message" class="message" aria-live="polite"></p>
+      </section>
+    </section>
+
+    <section id="dailyPage" class="page hidden card futuristic">
+      <h2>Daily Challenge</h2>
+      <p>Click below to load today's challenge for your selected board size.</p>
+      <button id="dailyBtn">Load Daily Puzzle</button>
+      <p class="small">Puzzle opens with animated board in Game page.</p>
+    </section>
+
+    <section id="leaderboardPage" class="page hidden card parchment serif-premium">
+      <h2>Global Leaderboard</h2>
+      <table class="leader-table">
+        <thead><tr><th>Player Name</th><th>Score</th><th>Region</th><th>Time</th></tr></thead>
+        <tbody id="leaderboardTableBody"></tbody>
+      </table>
+    </section>
+
+    <section id="aboutPage" class="page hidden card parchment major-panel">
+      <h2>About Our Game</h2>
+      <p>Sudoku Sage is a modern educational puzzle platform where learners practice logic using manual solving and AI-assisted CSP techniques in a clean interactive format.</p>
+      <div class="team-grid">
+        <a class="team-box" href="https://github.com/SpideyX-spec" target="_blank" rel="noreferrer"><strong><span class="member-icon">👤</span> Sulagna Dutta</strong><span><span class="link-icon">🐙</span> GitHub</span></a>
+        <a class="team-box" href="https://github.com/mitraaa-cmd" target="_blank" rel="noreferrer"><strong><span class="member-icon">👤</span> Mitra Sarkar</strong><span><span class="link-icon">🐙</span> GitHub</span></a>
+        <a class="team-box" href="https://github.com/arnab07-git" target="_blank" rel="noreferrer"><strong><span class="member-icon">👤</span> Arnab Kar</strong><span><span class="link-icon">🐙</span> GitHub</span></a>
+        <a class="team-box" href="https://github.com/adarshabiswas34-boop" target="_blank" rel="noreferrer"><strong><span class="member-icon">👤</span> Adarsha Biswas</strong><span><span class="link-icon">🐙</span> GitHub</span></a>
+        <a class="team-box" href="https://drtamal.github.io/Teaching.html" target="_blank" rel="noreferrer"><strong><span class="member-icon">👤</span> Project CO-ordinator Dr Tamal Ghosh</strong><span><span class="link-icon">🌐</span> Profile</span></a>
+      </div>
+    </section>
+
+    <section id="settingsPage" class="page hidden card parchment">
+      <h2>Settings</h2>
+      <label><input type="checkbox" id="settingSound" checked /> Enable game sound</label>
+      <label><input type="checkbox" id="settingDark" /> Enable dark mode</label>
+
+      <h3>Custom Timer by Difficulty (minutes)</h3>
+      <div class="row timer-settings">
+        <label>Easy <input type="number" id="timerEasy" min="1" value="15"></label>
+        <label>Medium <input type="number" id="timerMedium" min="1" value="25"></label>
+        <label>Hard <input type="number" id="timerHard" min="1" value="45"></label>
+      </div>
+      <div class="row buttons">
+        <button id="saveTimerBtn">💾 Save Timer</button>
+        <button id="resumeBtn">↩ Resume Game</button>
+        <button id="restartBtn">🔄 Restart Game</button>
+      </div>
+      <p class="small">These settings are saved locally on your device.</p>
+    </section>
+  </main>
+
+  <aside id="leaderboardPanel" class="leaderboard-panel hidden card parchment">
+    <h2>Leaderboard</h2>
+    <ul id="leaderboardList"></ul>
+  </aside>
+
+  <div id="winModal" class="win-modal hidden" aria-live="polite">
+    <div class="win-card">
+      <h3>🎉 Great Job!</h3>
+      <p id="winQuote">Amazing solving!</p>
+      <div class="balloons"><span></span><span></span><span></span><span></span></div>
+      <div class="crackers">✨ 🎊 ✨ 🎉</div>
+      <button id="closeWinModal">Continue</button>
+    </div>
+  </div>
+
+  <footer class="bottom-line">SUDOKU SAGE — Introduction to AI (CSE11112) | Adamas University</footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
