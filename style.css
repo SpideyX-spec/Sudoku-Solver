@@ -376,3 +376,35 @@ body.dark option {
   background-color: #252f44;
   color: #eef3ff;
 }
+
+
+/* --- Phase 2: Advanced Grid Highlighting --- */
+/* 1. The specifically selected cell */
+.cell.selected {
+  background-color: color-mix(in srgb, var(--accent) 35%, transparent) !important;
+}
+
+/* 2. The row, column, and 3x3 box peers */
+.cell.highlight-peer {
+  background-color: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+/* 3. Matching numbers elsewhere on the board */
+.cell.highlight-match {
+  background-color: color-mix(in srgb, var(--accent-2) 50%, transparent);
+}
+.cell.highlight-match input {
+  color: #fff !important;
+  text-shadow: 0 0 8px var(--accent);
+}
+
+/* Dark Mode Overrides for Highlights */
+body.dark .cell.selected {
+  background-color: color-mix(in srgb, var(--accent) 45%, transparent) !important;
+}
+body.dark .cell.highlight-peer {
+  background-color: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+body.dark .cell.highlight-match {
+  background-color: color-mix(in srgb, var(--accent-2) 40%, transparent);
+}
