@@ -18,7 +18,9 @@ body.dark {
 *{box-sizing:border-box}
 body{margin:0;font-family:Inter,sans-serif;color:var(--text);background:radial-gradient(circle at top right,#f5efe1,var(--bg))}
 body.dark{background:radial-gradient(circle at top right,#2a3248,var(--bg))}
-.hidden{display:none!important}
+.hidden, #gamePage.hidden {
+  display: none !important;
+}
 
 .loading-screen{min-height:100vh;display:grid;place-items:center;background:linear-gradient(rgba(255,255,255,.2),rgba(255,255,255,.2)),url('images/daymode.png') center/cover fixed}
 .poster{width:min(90vw,460px);padding:1rem;border-radius:26px;background:color-mix(in srgb,var(--accent) 45%, transparent);backdrop-filter: blur(3px);color:#fff;text-align:center;cursor:pointer;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.35)}
