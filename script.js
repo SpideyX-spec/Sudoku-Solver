@@ -44,7 +44,7 @@ const state = {
   elapsedBeforePause: 0,
   soundEnabled: true,
   soundPaused: false,
-  usedAI: false, // NEW: Tracks if the player took AI assistance
+  usedAI: false,
   customTimers: { easy: 15, medium: 25, hard: 45 }
 };
 
@@ -55,11 +55,13 @@ const difficultyHoles = {
 };
 
 const $ = (id) => document.getElementById(id);
+
 const message = (txt) => {
   $('message').textContent = txt;
 };
 
 const defaultTimers = { easy: 15, medium: 25, hard: 45 };
+
 const motivationQuotes = [
   'Brilliant thinking! Every puzzle makes your brain stronger 🌟',
   'You are a puzzle hero! Keep shining 🧠',
@@ -87,15 +89,19 @@ function formatDuration(sec) {
 
 function playTick() {
   if (state.mode !== 'manual' || !state.soundEnabled || state.soundPaused) return;
+
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
+
     osc.type = 'square';
     osc.frequency.value = 820;
     gain.gain.value = 0.015;
+
     osc.connect(gain);
     gain.connect(ctx.destination);
+
     osc.start();
     osc.stop(ctx.currentTime + 0.05);
   } catch {
@@ -127,9 +133,11 @@ function resumeGameClock() {
 
 function getElapsedSeconds() {
   let elapsed = Number(state.elapsedBeforePause || 0);
+
   if (state.gameStartedAt) {
     elapsed += Math.floor((Date.now() - state.gameStartedAt) / 1000);
   }
+
   return Math.max(0, elapsed);
 }
 
@@ -168,11 +176,10 @@ function showWinCelebration() {
 }
 
 function showPage(pageId) {
-  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.page').forEach((p) => p.classList.add('hidden'));
   const page = document.getElementById(pageId);
   if (page) page.classList.remove('hidden');
 
-  // NEW: Only show the top-right leaderboard icon on the Home Page
   const lbIcon = $('leaderboardIcon');
   if (lbIcon) {
     if (pageId === 'homePage') {
@@ -207,6 +214,7 @@ function permuteSolved(size) {
       solved[r][c] = map.get(solved[r][c]);
     }
   }
+
   return solved;
 }
 
@@ -392,7 +400,7 @@ function setGame(puzzle) {
 
 function startNewGame() {
   const puzzle = generatePuzzle(state.size, state.difficulty);
-  state.usedAI = false; // Reset AI assist flag for new game
+  state.usedAI = false;
   setGame(puzzle);
   resetGameClock();
   stopTimer();
@@ -405,15 +413,14 @@ function startNewGame() {
 async function solveWithTime(animated = false) {
   if (state.solving) return;
   state.solving = true;
-  state.usedAI = true; // Mark that AI was used to help
+  state.usedAI = true;
 
   const working = deepCopy(state.puzzle);
   const t0 = performance.now();
   const solved = solveCSP(working);
-  
-  // Calculate exact milliseconds
-  const exactMs = (performance.now() - t0).toFixed(3);
-  $('aiTime').textContent = `${exactMs}s`;
+  const exactSeconds = ((performance.now() - t0) / 1000).toFixed(3);
+
+  $('aiTime').textContent = `${exactSeconds}s`;
 
   if (!solved) {
     state.solving = false;
@@ -438,10 +445,56 @@ async function solveWithTime(animated = false) {
 
   stopTimer();
   pauseGameClock();
-  
-  // Inform the user but DO NOT store the AI's instant time to the leaderboard
-  message(`AI Auto-Solved in ${exactMs} seconds! (This speed is not saved to the leaderboard)`);
+  message(`AI Auto-Solved in ${exactSeconds} seconds! (This speed is not saved to the leaderboard)`);
   state.solving = false;
+}
+
+function provideHint() {
+  if (state.mode !== 'manual') {
+    message('Hints are only available in Manual mode.');
+    return;
+  }
+
+  for (let r = 0; r < state.size; r++) {
+    for (let c = 0; c < state.size; c++) {
+      if (state.board[r][c] === '') {
+        const cand = getCandidates(state.board, r, c);
+
+        if (cand.length === 1) {
+          const val = cand[0];
+          state.board[r][c] = val;
+          renderGrid();
+          state.usedAI = true;
+          message(`💡 Hint: Row ${r + 1}, Col ${c + 1} must be ${val}. Only valid candidate.`);
+          saveProgress();
+          return;
+        }
+      }
+    }
+  }
+
+  const working = deepCopy(state.board);
+
+  if (!solveCSP(working)) {
+    message('No solution possible from current state.');
+    return;
+  }
+
+  for (let r = 0; r < state.size; r++) {
+    for (let c = 0; c < state.size; c++) {
+      if (state.board[r][c] === '') {
+        const correctVal = working[r][c];
+        state.board[r][c] = correctVal;
+        renderGrid();
+        state.usedAI = true;
+        message(`💡 AI Hint: ${correctVal} fits at Row ${r + 1}, Col ${c + 1}.`);
+        saveProgress();
+        return;
+      }
+    }
+  }
+
+  message('Board already complete!');
 }
 
 function checkWin() {
@@ -465,10 +518,9 @@ function checkWin() {
   let username = $('username').value.trim() || 'Guest';
   const region = $('regionInput')?.value?.trim() || 'Global';
   const score = Math.round(100000 / (elapsedSec + 1));
-  
-  // Tag the user if they used the AI Solver to finish the board
+
   if (state.usedAI) {
-      username += ' 🤖 (AI)';
+    username += ' 🤖 (AI)';
   }
 
   saveScore(username, score, state.difficulty, state.size, region, elapsedSec);
@@ -552,11 +604,15 @@ async function loadDaily() {
       stopTimer();
       state.remainingSeconds = currentTimerSeconds();
       $('countdown').textContent = formatTime(state.remainingSeconds);
-      
-      // NEW: Localized date for India
-      const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: 'long', day: 'numeric' };
+
+      const options = {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      };
       const localDate = new Date().toLocaleDateString('en-IN', options);
-      
+
       $('dailyStatus').textContent = `Ready (${localDate})`;
       showPage('gamePage');
 
@@ -628,16 +684,25 @@ function resumeProgress() {
 
 function bindSidebar() {
   const menu = $('sideBar');
-  $('menuToggle').addEventListener('click', () => { menu.classList.toggle('open'); document.body.classList.toggle('menu-open', menu.classList.contains('open')); });
-  $('closeMenu').addEventListener('click', () => { menu.classList.remove('open'); document.body.classList.remove('menu-open'); });
-  menu.querySelectorAll('.nav-btn').forEach(btn => {
+
+  $('menuToggle').addEventListener('click', () => {
+    menu.classList.toggle('open');
+    document.body.classList.toggle('menu-open', menu.classList.contains('open'));
+  });
+
+  $('closeMenu').addEventListener('click', () => {
+    menu.classList.remove('open');
+    document.body.classList.remove('menu-open');
+  });
+
+  menu.querySelectorAll('.nav-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       showPage(btn.dataset.page);
-      menu.classList.remove('open'); document.body.classList.remove('menu-open');
+      menu.classList.remove('open');
+      document.body.classList.remove('menu-open');
     });
   });
-  
-  // NEW: Navigates to the full page instead of opening a panel
+
   $('leaderboardIcon').addEventListener('click', () => showPage('leaderboardPage'));
 }
 
@@ -646,6 +711,7 @@ function bindUI() {
   $('shuffleBtn').addEventListener('click', startNewGame);
   $('checkBtn').addEventListener('click', checkWin);
   $('solveBtn').addEventListener('click', () => solveWithTime(state.mode === 'ai'));
+  $('hintBtn').addEventListener('click', provideHint);
   $('dailyBtn').addEventListener('click', loadDaily);
   $('closeWinModal').addEventListener('click', () => $('winModal').classList.add('hidden'));
 
@@ -732,6 +798,7 @@ function bindUI() {
   });
 
   const screen = $('loadingScreen');
+
   const enter = () => {
     screen.classList.add('hidden');
     $('app').classList.remove('hidden');
