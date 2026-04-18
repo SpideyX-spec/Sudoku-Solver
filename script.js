@@ -44,6 +44,7 @@ const state = {
   elapsedBeforePause: 0,
   soundEnabled: true,
   soundPaused: false,
+  usedAI: false, // NEW: Tracks if the player took AI assistance
   customTimers: { easy: 15, medium: 25, hard: 45 }
 };
 
@@ -381,6 +382,7 @@ function setGame(puzzle) {
 
 function startNewGame() {
   const puzzle = generatePuzzle(state.size, state.difficulty);
+  state.usedAI = false; // Reset AI assist flag for new game
   setGame(puzzle);
   resetGameClock();
   stopTimer();
@@ -393,15 +395,15 @@ function startNewGame() {
 async function solveWithTime(animated = false) {
   if (state.solving) return;
   state.solving = true;
+  state.usedAI = true; // Mark that AI was used to help
 
-  // OVERRIDE: We pull from state.puzzle instead of state.board.
-  // This automatically clears any incorrect inputs the player made 
-  // before running the solver, preventing a crash and showing the correct answer.
   const working = deepCopy(state.puzzle);
   const t0 = performance.now();
   const solved = solveCSP(working);
-  const elapsed = ((performance.now() - t0) / 1000).toFixed(3);
-  $('aiTime').textContent = `${elapsed}s`;
+  
+  // Calculate exact milliseconds
+  const exactMs = (performance.now() - t0).toFixed(3);
+  $('aiTime').textContent = `${exactMs}s`;
 
   if (!solved) {
     state.solving = false;
@@ -426,25 +428,10 @@ async function solveWithTime(animated = false) {
 
   stopTimer();
   pauseGameClock();
-  message(`Puzzle Auto-Solved! Mistakes corrected and board finished.`);
+  
+  // Inform the user but DO NOT store the AI's instant time to the leaderboard
+  message(`AI Auto-Solved in ${exactMs} seconds! (This speed is not saved to the leaderboard)`);
   state.solving = false;
-
-  // COMMENTED OUT: We do not save AI solves to the Leaderboard.
-  // This prevents the AI from recording instant 0m:00s times.
-  /*
-  const username = $('username').value.trim() || 'Guest';
-  const region = $('regionInput')?.value?.trim() || 'Global';
-  const elapsedSec = Math.max(1, Math.round(parseFloat(elapsed)));
-
-  saveScore(
-    username,
-    Math.round(100 / (parseFloat(elapsed) + 1)),
-    state.difficulty,
-    state.size,
-    region,
-    elapsedSec
-  );
-  */
 }
 
 function checkWin() {
@@ -465,9 +452,14 @@ function checkWin() {
   updateStreak();
   showWinCelebration();
 
-  const username = $('username').value.trim() || 'Guest';
+  let username = $('username').value.trim() || 'Guest';
   const region = $('regionInput')?.value?.trim() || 'Global';
   const score = Math.round(100000 / (elapsedSec + 1));
+  
+  // Tag the user if they used the AI Solver to finish the board
+  if (state.usedAI) {
+      username += ' 🤖 (AI)';
+  }
 
   saveScore(username, score, state.difficulty, state.size, region, elapsedSec);
 }
@@ -511,7 +503,7 @@ async function loadLeaderboard() {
     $('leaderboardList').innerHTML = data
       .map(
         (x) =>
-          `<li>${x.username} — ${x.score} pts • ${formatDuration(x.time_seconds)} (${x.region || 'Global'})</li>`
+          `<li>${x.username} [${x.size}×${x.size}] — ${x.score} pts • ${formatDuration(x.time_seconds)} (${x.region || 'Global'})</li>`
       )
       .join('');
 
@@ -520,7 +512,7 @@ async function loadLeaderboard() {
       body.innerHTML = data
         .map(
           (x) =>
-            `<tr><td>${x.username}</td><td>${x.score}</td><td>${x.region || 'Global'}</td><td>${formatDuration(x.time_seconds)}</td></tr>`
+            `<tr><td>${x.username}</td><td>${x.size}×${x.size}</td><td>${x.score}</td><td>${x.region || 'Global'}</td><td>${formatDuration(x.time_seconds)}</td></tr>`
         )
         .join('');
     }
@@ -540,7 +532,12 @@ async function loadDaily() {
       stopTimer();
       state.remainingSeconds = currentTimerSeconds();
       $('countdown').textContent = formatTime(state.remainingSeconds);
-      $('dailyStatus').textContent = `Ready (${payload.date})`;
+      
+      // NEW: Localized date for India
+      const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: 'long', day: 'numeric' };
+      const localDate = new Date().toLocaleDateString('en-IN', options);
+      
+      $('dailyStatus').textContent = `Ready (${localDate})`;
       showPage('gamePage');
 
       const bp = $('gameBoardPanel');
@@ -566,7 +563,8 @@ function saveProgress() {
     aiTime: $('aiTime').textContent,
     countdown: $('countdown').textContent,
     gameStartedAt: state.gameStartedAt,
-    elapsedBeforePause: state.elapsedBeforePause
+    elapsedBeforePause: state.elapsedBeforePause,
+    usedAI: state.usedAI
   };
 
   localStorage.setItem('sudoku_progress', JSON.stringify(payload));
@@ -582,6 +580,7 @@ function resumeProgress() {
     state.mode = data.mode || 'manual';
     state.size = Number(data.size || 9);
     state.difficulty = data.difficulty || 'medium';
+    state.usedAI = data.usedAI || false;
 
     $('modeSelect').value = state.mode;
     $('sizeSelect').value = String(state.size);
