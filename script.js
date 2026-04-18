@@ -168,9 +168,19 @@ function showWinCelebration() {
 }
 
 function showPage(pageId) {
-  document.querySelectorAll('.page').forEach((p) => p.classList.add('hidden'));
+  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
   const page = document.getElementById(pageId);
   if (page) page.classList.remove('hidden');
+
+  // NEW: Only show the top-right leaderboard icon on the Home Page
+  const lbIcon = $('leaderboardIcon');
+  if (lbIcon) {
+    if (pageId === 'homePage') {
+      lbIcon.classList.remove('hidden');
+    } else {
+      lbIcon.classList.add('hidden');
+    }
+  }
 }
 
 function deepCopy(grid) {
@@ -618,28 +628,17 @@ function resumeProgress() {
 
 function bindSidebar() {
   const menu = $('sideBar');
-
-  $('menuToggle').addEventListener('click', () => {
-    menu.classList.toggle('open');
-    document.body.classList.toggle('menu-open', menu.classList.contains('open'));
-  });
-
-  $('closeMenu').addEventListener('click', () => {
-    menu.classList.remove('open');
-    document.body.classList.remove('menu-open');
-  });
-
-  menu.querySelectorAll('.nav-btn').forEach((btn) => {
+  $('menuToggle').addEventListener('click', () => { menu.classList.toggle('open'); document.body.classList.toggle('menu-open', menu.classList.contains('open')); });
+  $('closeMenu').addEventListener('click', () => { menu.classList.remove('open'); document.body.classList.remove('menu-open'); });
+  menu.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       showPage(btn.dataset.page);
-      menu.classList.remove('open');
-      document.body.classList.remove('menu-open');
+      menu.classList.remove('open'); document.body.classList.remove('menu-open');
     });
   });
-
-  $('leaderboardIcon').addEventListener('click', () => {
-    $('leaderboardPanel').classList.toggle('hidden');
-  });
+  
+  // NEW: Navigates to the full page instead of opening a panel
+  $('leaderboardIcon').addEventListener('click', () => showPage('leaderboardPage'));
 }
 
 function bindUI() {
