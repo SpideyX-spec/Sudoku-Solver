@@ -35,7 +35,7 @@ body.dark{background:radial-gradient(circle at top right,#2a3248,var(--bg))}
 .nav-btn{width:100%;margin:.3rem 0;padding:.6rem;border:1px solid color-mix(in srgb,var(--accent) 45%, transparent);border-radius:8px;background:transparent;color:var(--text);text-align:left;font-family:'Cormorant Garamond',serif;font-size:1.08rem;cursor:pointer}
 .sidebar-meta{border-top:1px solid color-mix(in srgb,var(--accent) 35%, transparent);padding-top:.8rem;display:grid;gap:.8rem}
 
-.app{max-width:1120px;margin:0 auto;padding:1rem 1rem 2rem;display:grid;gap:1rem}
+.app{max-width:1120px;margin:0 auto;padding:4.5rem 1rem 2rem;display:grid;gap:1rem}
 .card{background:var(--panel);border-radius:18px;padding:1rem;box-shadow:var(--shadow);border:2px solid color-mix(in srgb,var(--accent) 45%, transparent)}
 .parchment{background:linear-gradient(rgba(255,255,255,.35),rgba(255,255,255,.35)),var(--panel)}
 .topbar .title-aged{font-family:Cinzel,serif;font-size:3rem;margin:0}
@@ -302,4 +302,42 @@ body.dark input {
   .team-grid{grid-template-columns:1fr}
   .leaderboard-panel{right:8px;left:8px;width:auto}
   .bottom-line{font-size:.92rem;padding:0 .4rem;text-align:center}
+}
+
+/* --- New Redesign for Daily, About, and Settings --- */
+#dailyPage, #settingsPage {
+  text-align: center;
+  padding: 2rem;
+}
+#aboutPage {
+  padding: 2rem;
+}
+#dailyPage h2, #aboutPage h2, #settingsPage h2 {
+  color: var(--accent);
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+#dailyBtn {
+  font-size: 1.25rem;
+  padding: 1rem 2.5rem;
+  margin: 1.5rem auto;
+  display: inline-block;
+  box-shadow: 0 4px 15px rgba(139, 94, 52, 0.4);
+  transition: transform 0.2s ease-in-out;
+}
+#dailyBtn:hover {
+  transform: scale(1.05);
+}
+#settingsPage .timer-settings {
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+#settingsPage .buttons {
+  justify-content: center;
+  gap: 1rem;
+}
+#settingsPage label {
+  display: block;
+  margin-bottom: 0.8rem;
+  font-size: 1.1rem;
 }
