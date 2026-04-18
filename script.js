@@ -45,6 +45,7 @@ const state = {
   soundEnabled: true,
   soundPaused: false,
   usedAI: false,
+  selected: null,
   customTimers: { easy: 15, medium: 25, hard: 45 }
 };
 
@@ -312,6 +313,32 @@ function isSolvable(puzzle) {
   return solveCSP(copy);
 }
 
+function updateHighlights(r, c) {
+  state.selected = { r, c };
+  const n = state.size;
+  const val = state.board[r][c];
+  const box = getBoxSize(n);
+  const br = Math.floor(r / box) * box;
+  const bc = Math.floor(c / box) * box;
+
+  const cells = document.querySelectorAll('.cell');
+
+  cells.forEach((cell, idx) => {
+    cell.classList.remove('selected', 'highlight-peer', 'highlight-match');
+
+    const i = Math.floor(idx / n);
+    const j = idx % n;
+
+    if (val !== '' && state.board[i][j] === val) {
+      cell.classList.add('highlight-match');
+    } else if (i === r && j === c) {
+      cell.classList.add('selected');
+    } else if (i === r || j === c || (i >= br && i < br + box && j >= bc && j < bc + box)) {
+      cell.classList.add('highlight-peer');
+    }
+  });
+}
+
 function renderGrid() {
   const n = state.size;
   const grid = $('gridContainer');
@@ -346,9 +373,15 @@ function renderGrid() {
       }
 
       input.addEventListener('input', (e) => onInput(e, r, c));
+      input.addEventListener('focus', () => updateHighlights(r, c));
+
       cell.appendChild(input);
       grid.appendChild(cell);
     }
+  }
+
+  if (state.selected) {
+    updateHighlights(state.selected.r, state.selected.c);
   }
 }
 
@@ -363,11 +396,14 @@ function onInput(e, r, c) {
   if (!allowed.includes(raw)) {
     e.target.value = '';
     state.board[r][c] = '';
+    updateHighlights(r, c);
     saveProgress();
     return;
   }
 
   state.board[r][c] = raw;
+  updateHighlights(r, c);
+
   const parent = e.target.parentElement;
 
   if (!isValid(state.board, r, c, raw)) {
@@ -385,6 +421,7 @@ function setGame(puzzle) {
   state.puzzle = deepCopy(puzzle);
   state.board = deepCopy(puzzle);
   state.fixed = new Set();
+  state.selected = null;
 
   for (let r = 0; r < state.size; r++) {
     for (let c = 0; c < state.size; c++) {
@@ -464,6 +501,7 @@ function provideHint() {
           const val = cand[0];
           state.board[r][c] = val;
           renderGrid();
+          updateHighlights(r, c);
           state.usedAI = true;
           message(`💡 Hint: Row ${r + 1}, Col ${c + 1} must be ${val}. Only valid candidate.`);
           saveProgress();
@@ -486,6 +524,7 @@ function provideHint() {
         const correctVal = working[r][c];
         state.board[r][c] = correctVal;
         renderGrid();
+        updateHighlights(r, c);
         state.usedAI = true;
         message(`💡 AI Hint: ${correctVal} fits at Row ${r + 1}, Col ${c + 1}.`);
         saveProgress();
@@ -640,7 +679,8 @@ function saveProgress() {
     countdown: $('countdown').textContent,
     gameStartedAt: state.gameStartedAt,
     elapsedBeforePause: state.elapsedBeforePause,
-    usedAI: state.usedAI
+    usedAI: state.usedAI,
+    selected: state.selected
   };
 
   localStorage.setItem('sudoku_progress', JSON.stringify(payload));
@@ -657,6 +697,7 @@ function resumeProgress() {
     state.size = Number(data.size || 9);
     state.difficulty = data.difficulty || 'medium';
     state.usedAI = data.usedAI || false;
+    state.selected = data.selected || null;
 
     $('modeSelect').value = state.mode;
     $('sizeSelect').value = String(state.size);
@@ -664,6 +705,7 @@ function resumeProgress() {
 
     setGame(data.puzzle?.length ? data.puzzle : generatePuzzle(state.size, state.difficulty));
     state.board = data.board?.length ? data.board : state.board;
+    state.selected = data.selected || null;
     renderGrid();
 
     $('aiTime').textContent = data.aiTime || '0.000s';
