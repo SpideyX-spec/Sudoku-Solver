@@ -46,8 +46,6 @@ const state = {
   soundPaused: false,
   usedAI: false,
   selected: null,
-  draftMode: false,
-  notes: [],
   customTimers: { easy: 15, medium: 25, hard: 45 }
 };
 
@@ -358,22 +356,10 @@ function renderGrid() {
       if ((c + 1) % box === 0 && c !== n - 1) cell.style.borderRight = '3px solid var(--line)';
       if ((r + 1) % box === 0 && r !== n - 1) cell.style.borderBottom = '3px solid var(--line)';
 
-      if (state.notes[r] && state.notes[r][c] && state.notes[r][c].size > 0 && state.board[r][c] === '') {
-        const notesDiv = document.createElement('div');
-        notesDiv.className = `notes-grid notes-${n}`;
-        for (let i = 0; i < n; i++) {
-          const sym = SYMBOLS[n][i];
-          const span = document.createElement('span');
-          span.textContent = state.notes[r][c].has(sym) ? sym : '';
-          notesDiv.appendChild(span);
-        }
-        cell.appendChild(notesDiv);
-      }
-
       const input = document.createElement('input');
       input.setAttribute('data-r', r);
       input.setAttribute('data-c', c);
-      input.maxLength = n === 16 ? 2 : 1;
+      input.maxLength = n === 16 ? 2 : 1; // Restored dynamic length for 16x16
       input.value = state.board[r][c];
 
       if (state.fixed.has(`${r},${c}`)) {
@@ -386,21 +372,10 @@ function renderGrid() {
         if (typeof updateHighlights === 'function') updateHighlights(r, c);
       });
 
+      // Arrow Key Navigation
       input.addEventListener('keydown', (e) => {
-        // Phase 3: Handle Backspace/Delete to clear notes
-        if (state.draftMode && (e.key === 'Backspace' || e.key === 'Delete') && state.board[r][c] === '') {
-          e.preventDefault();
-          state.notes[r][c].clear();
-          renderGrid();
-          saveProgress();
-          const activeInput = document.querySelector(`input[data-r="${r}"][data-c="${c}"]`);
-          if (activeInput) activeInput.focus();
-          return;
-        }
-
-        // Phase 4: Keyboard Navigation Mapping
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-          e.preventDefault();
+          e.preventDefault(); 
           let nextR = r;
           let nextC = c;
 
@@ -434,30 +409,12 @@ function onInput(e, r, c) {
     resumeGameClock();
   }
 
-  const raw = e.target.value.trim();
+  const raw = e.target.value.trim(); // Restored standard input processing
   const allowed = SYMBOLS[state.size];
-
-  if (state.draftMode) {
-    e.target.value = state.board[r][c];
-    if (allowed.includes(raw) && state.board[r][c] === '') {
-      const notesSet = state.notes[r][c];
-      if (notesSet.has(raw)) notesSet.delete(raw);
-      else notesSet.add(raw);
-      renderGrid();
-      saveProgress();
-      const activeInput = document.querySelector(`input[data-r="${r}"][data-c="${c}"]`);
-      if (activeInput) {
-        activeInput.focus();
-        activeInput.setSelectionRange(activeInput.value.length, activeInput.value.length);
-      }
-    }
-    return;
-  }
 
   if (!allowed.includes(raw)) {
     e.target.value = '';
     state.board[r][c] = '';
-    state.notes[r][c].clear();
     if (typeof updateHighlights === 'function') updateHighlights(r, c);
     saveProgress();
     return;
@@ -465,7 +422,6 @@ function onInput(e, r, c) {
 
   state.board[r][c] = raw;
   e.target.value = raw;
-  state.notes[r][c].clear();
 
   const parent = e.target.parentElement;
   if (!isValid(state.board, r, c, raw)) {
@@ -486,10 +442,6 @@ function setGame(puzzle) {
   state.fixed = new Set();
   state.selected = null;
 
-  state.notes = Array.from({ length: state.size }, () =>
-    Array.from({ length: state.size }, () => new Set())
-  );
-
   for (let r = 0; r < state.size; r++) {
     for (let c = 0; c < state.size; c++) {
       if (state.puzzle[r][c] !== '') state.fixed.add(`${r},${c}`);
@@ -505,14 +457,7 @@ function setGame(puzzle) {
 function startNewGame() {
   const puzzle = generatePuzzle(state.size, state.difficulty);
   state.usedAI = false;
-  state.draftMode = false;
   setGame(puzzle);
-
-  const draftBtn = $('draftBtn');
-  if (draftBtn) {
-    draftBtn.textContent = '📝 Draft: OFF';
-    draftBtn.style.background = '';
-  }
 
   resetGameClock();
   stopTimer();
@@ -527,25 +472,27 @@ async function solveWithTime(animated = false) {
   state.solving = true;
   state.usedAI = true;
 
-  const working = deepCopy(state.board);
+  let working = deepCopy(state.board);
   const t0 = performance.now();
-  const solved = solveCSP(working);
-  const exactSeconds = ((performance.now() - t0) / 1000).toFixed(3);
-
-  $('aiTime').textContent = `${exactSeconds}s`;
+  let solved = solveCSP(working);
+  let exactMs = ((performance.now() - t0) / 1000).toFixed(3);
 
   if (!solved) {
-    state.solving = false;
-    message('No solution found.');
-    return;
+    working = deepCopy(state.puzzle);
+    solved = solveCSP(working);
+    exactMs = ((performance.now() - t0) / 1000).toFixed(3);
+    message(`AI Auto-Solved in ${exactMs}s! (Mistakes in your progress were corrected)`);
+  } else {
+    message(`AI Auto-Solved remaining cells in ${exactMs}s! (This speed is not saved)`);
   }
+
+  $('aiTime').textContent = `${exactMs}s`;
 
   if (animated) {
     for (let r = 0; r < state.size; r++) {
       for (let c = 0; c < state.size; c++) {
         if (!state.fixed.has(`${r},${c}`)) {
           state.board[r][c] = working[r][c];
-          state.notes[r][c].clear();
           renderGrid();
           await new Promise((res) => setTimeout(res, 10));
         }
@@ -553,15 +500,11 @@ async function solveWithTime(animated = false) {
     }
   } else {
     state.board = working;
-    state.notes = Array.from({ length: state.size }, () =>
-      Array.from({ length: state.size }, () => new Set())
-    );
     renderGrid();
   }
 
   stopTimer();
   pauseGameClock();
-  message(`AI Auto-Solved in ${exactSeconds} seconds! (This speed is not saved to the leaderboard)`);
   state.solving = false;
 }
 
@@ -579,7 +522,6 @@ function provideHint() {
         if (cand.length === 1) {
           const val = cand[0];
           state.board[r][c] = val;
-          state.notes[r][c].clear();
           renderGrid();
           updateHighlights(r, c);
           state.usedAI = true;
@@ -603,7 +545,6 @@ function provideHint() {
       if (state.board[r][c] === '') {
         const correctVal = working[r][c];
         state.board[r][c] = correctVal;
-        state.notes[r][c].clear();
         renderGrid();
         updateHighlights(r, c);
         state.usedAI = true;
@@ -763,9 +704,7 @@ function saveProgress() {
     gameStartedAt: state.gameStartedAt,
     elapsedBeforePause: state.elapsedBeforePause,
     usedAI: state.usedAI,
-    selected: state.selected,
-    draftMode: state.draftMode,
-    notes: state.notes.map((row) => row.map((set) => Array.from(set)))
+    selected: state.selected
   };
 
   localStorage.setItem('sudoku_progress', JSON.stringify(payload));
@@ -783,19 +722,6 @@ function resumeProgress() {
     state.difficulty = data.difficulty || 'medium';
     state.usedAI = data.usedAI || false;
     state.selected = data.selected || null;
-    state.draftMode = data.draftMode || false;
-
-    const draftBtn = $('draftBtn');
-    if (draftBtn) {
-      draftBtn.textContent = state.draftMode ? '📝 Draft: ON' : '📝 Draft: OFF';
-      draftBtn.style.background = state.draftMode ? 'linear-gradient(135deg, #2b9e60, #45d688)' : '';
-    }
-
-    state.notes = data.notes
-      ? data.notes.map((row) => row.map((arr) => new Set(arr)))
-      : Array.from({ length: state.size }, () =>
-          Array.from({ length: state.size }, () => new Set())
-        );
 
     $('modeSelect').value = state.mode;
     $('sizeSelect').value = String(state.size);
@@ -804,12 +730,6 @@ function resumeProgress() {
     setGame(data.puzzle?.length ? data.puzzle : generatePuzzle(state.size, state.difficulty));
     state.board = data.board?.length ? data.board : state.board;
     state.selected = data.selected || null;
-    state.draftMode = data.draftMode || false;
-    state.notes = data.notes
-      ? data.notes.map((row) => row.map((arr) => new Set(arr)))
-      : Array.from({ length: state.size }, () =>
-          Array.from({ length: state.size }, () => new Set())
-        );
 
     renderGrid();
 
@@ -861,19 +781,6 @@ function bindUI() {
   $('hintBtn').addEventListener('click', provideHint);
   $('dailyBtn').addEventListener('click', loadDaily);
   $('closeWinModal').addEventListener('click', () => $('winModal').classList.add('hidden'));
-
-  $('draftBtn').addEventListener('click', () => {
-    state.draftMode = !state.draftMode;
-    const draftBtn = $('draftBtn');
-    draftBtn.textContent = state.draftMode ? '📝 Draft: ON' : '📝 Draft: OFF';
-    draftBtn.style.background = state.draftMode ? 'linear-gradient(135deg, #2b9e60, #45d688)' : '';
-    message(
-      state.draftMode
-        ? 'Draft Mode ON: Type numbers to add pencil marks.'
-        : 'Draft Mode OFF: Numbers will finalize the cell.'
-    );
-    saveProgress();
-  });
 
   $('startBtn').addEventListener('click', () => {
     if (state.mode === 'manual') {
