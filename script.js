@@ -403,7 +403,6 @@ function onInput(e, r, c) {
   if (typeof updateHighlights === 'function') updateHighlights(r, c);
   saveProgress();
   
-  // NEW: Auto-check silently when a number is typed
   checkWin(true); 
 }
 
@@ -497,7 +496,7 @@ function provideHint() {
           state.usedAI = true;
           message(`💡 Hint: Row ${r + 1}, Col ${c + 1} must be ${val}. Only valid candidate.`);
           saveProgress();
-          checkWin(true); // NEW: Auto-check in case hint finishes the board
+          checkWin(true); 
           return;
         }
       }
@@ -520,7 +519,7 @@ function provideHint() {
         state.usedAI = true;
         message(`💡 AI Hint: ${correctVal} fits at Row ${r + 1}, Col ${c + 1}.`);
         saveProgress();
-        checkWin(true); // NEW: Auto-check in case hint finishes the board
+        checkWin(true); 
         return;
       }
     }
@@ -528,7 +527,6 @@ function provideHint() {
   message('Board already complete!');
 }
 
-// NEW: Added silent parameter for Auto-Check functionality
 function checkWin(silent = false) {
   for (let r = 0; r < state.size; r++) {
     for (let c = 0; c < state.size; c++) {
@@ -580,14 +578,20 @@ function hydrateStreak() {
 
 async function saveScore(username, score, difficulty, size, region, timeSeconds = 0) {
   try {
-    await fetch('/save_score', {
+    const response = await fetch('/save_score', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, score, difficulty, size, region, timeSeconds })
     });
-    loadLeaderboard();
-  } catch {
-    message('Could not save score (server unavailable).');
+    
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    await loadLeaderboard(); 
+  } catch (error) {
+    console.error("Save Score Error:", error);
+    message('Could not save score to leaderboard.');
   }
 }
 
@@ -596,16 +600,18 @@ async function loadLeaderboard() {
     const resp = await fetch('/leaderboard');
     const data = await resp.json();
 
-    // NEW: Added fallbacks (|| 'Unknown') to prevent JS crashing on old database rows
-    $('leaderboardList').innerHTML = data
-      .map(
-        (x) =>
-          `<li style="margin-bottom: 0.5rem; line-height: 1.4;">
-            <strong>${x.username || 'Guest'}</strong><br>
-            <span style="font-size: 0.85em; opacity: 0.8;">${(x.difficulty || 'medium').toUpperCase()} [${x.size}×${x.size}] — ${x.score} pts • ${formatDuration(x.time_seconds)} (${x.region || 'Global'})</span>
-          </li>`
-      )
-      .join('');
+    const list = $('leaderboardList');
+    if (list) {
+      list.innerHTML = data
+        .map(
+          (x) =>
+            `<li style="margin-bottom: 0.5rem; line-height: 1.4;">
+              <strong>${x.username || 'Guest'}</strong><br>
+              <span style="font-size: 0.85em; opacity: 0.8;">${(x.difficulty || 'medium').toUpperCase()} [${x.size}×${x.size}] — ${x.score} pts • ${formatDuration(x.time_seconds)} (${x.region || 'Global'})</span>
+            </li>`
+        )
+        .join('');
+    }
 
     const body = $('leaderboardTableBody');
     if (body) {
@@ -625,7 +631,8 @@ async function loadLeaderboard() {
     }
   } catch (err) {
     console.error("Leaderboard Error:", err);
-    $('leaderboardList').innerHTML = '<li>Leaderboard unavailable.</li>';
+    const list = $('leaderboardList');
+    if (list) list.innerHTML = '<li>Leaderboard unavailable.</li>';
   }
 }
 
@@ -748,7 +755,12 @@ function bindSidebar() {
 function bindUI() {
   $('newBtn').addEventListener('click', startNewGame);
   $('shuffleBtn').addEventListener('click', startNewGame);
-  $('checkBtn').addEventListener('click', () => checkWin(false));
+  
+  $('checkBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      checkWin(false);
+  });
+  
   $('solveBtn').addEventListener('click', () => solveWithTime(state.mode === 'ai'));
   $('hintBtn').addEventListener('click', provideHint);
   $('dailyBtn').addEventListener('click', loadDaily);
@@ -838,7 +850,10 @@ function bindUI() {
     showPage('homePage');
     $('sideBar').classList.remove('open');
     document.body.classList.remove('menu-open');
-    $('leaderboardPanel').classList.add('hidden');
+    
+    // Check if the panel exists before manipulating it
+    const lbPanel = $('leaderboardPanel');
+    if (lbPanel) lbPanel.classList.add('hidden');
   };
 
   screen.querySelector('.poster').addEventListener('click', enter);
