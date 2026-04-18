@@ -503,7 +503,10 @@ async function loadLeaderboard() {
     $('leaderboardList').innerHTML = data
       .map(
         (x) =>
-          `<li>${x.username} [${x.size}×${x.size}] — ${x.score} pts • ${formatDuration(x.time_seconds)} (${x.region || 'Global'})</li>`
+          `<li style="margin-bottom: 0.5rem; line-height: 1.4;">
+            <strong>${x.username}</strong><br>
+            <span style="font-size: 0.85em; opacity: 0.8;">${x.difficulty.toUpperCase()} [${x.size}×${x.size}] — ${x.score} pts • ${formatDuration(x.time_seconds)} (${x.region || 'Global'})</span>
+          </li>`
       )
       .join('');
 
@@ -512,7 +515,14 @@ async function loadLeaderboard() {
       body.innerHTML = data
         .map(
           (x) =>
-            `<tr><td>${x.username}</td><td>${x.size}×${x.size}</td><td>${x.score}</td><td>${x.region || 'Global'}</td><td>${formatDuration(x.time_seconds)}</td></tr>`
+            `<tr>
+              <td style="font-weight: 600;">${x.username}</td>
+              <td style="text-transform: capitalize;">${x.difficulty}</td>
+              <td>${x.size}×${x.size}</td>
+              <td>${x.score}</td>
+              <td>${x.region || 'Global'}</td>
+              <td>${formatDuration(x.time_seconds)}</td>
+            </tr>`
         )
         .join('');
     }
