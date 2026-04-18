@@ -89,11 +89,10 @@ body.dark button{background:linear-gradient(135deg,#6f8ee8,#5fcfd2);color:#f8fbf
 .leader-table {
   width: 100%;
   border-collapse: collapse;
-  text-align: center; /* Centers the data for a structured look */
+  text-align: center; 
   margin-top: 0.5rem;
   font-family: 'Inter', sans-serif;
 }
-
 .leader-table th {
   padding: 0.8rem 0.5rem;
   background-color: color-mix(in srgb, var(--accent) 15%, transparent);
@@ -102,25 +101,20 @@ body.dark button{background:linear-gradient(135deg,#6f8ee8,#5fcfd2);color:#f8fbf
   border-bottom: 2px solid var(--accent);
   white-space: nowrap;
 }
-
 .leader-table td {
   padding: 0.8rem 0.5rem;
   border-bottom: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
 }
-
-/* Align only the Player Name to the left so it reads naturally */
 .leader-table td:first-child, .leader-table th:first-child {
   text-align: left;
 }
-
-/* Subtle alternating row colors for readability */
 .leader-table tr:nth-child(even) td {
   background-color: rgba(0, 0, 0, 0.02);
 }
-
 body.dark .leader-table tr:nth-child(even) td {
   background-color: rgba(255, 255, 255, 0.02);
 }
+
 .win-modal{position:fixed;inset:0;background:rgba(10,14,22,.6);display:grid;place-items:center;z-index:20}
 .win-card{width:min(90vw,420px);background:var(--panel);border-radius:16px;padding:1rem;text-align:center}
 .crackers{font-size:1.3rem;animation:sparkle 1.2s linear infinite}@keyframes sparkle{0%,100%{opacity:.25}50%{opacity:1}}
@@ -377,7 +371,6 @@ body.dark option {
   color: #eef3ff;
 }
 
-
 /* --- Phase 2: Advanced Grid Highlighting --- */
 /* 1. The specifically selected cell */
 .cell.selected {
@@ -407,44 +400,4 @@ body.dark .cell.highlight-peer {
 }
 body.dark .cell.highlight-match {
   background-color: color-mix(in srgb, var(--accent-2) 40%, transparent);
-}
-
-/* --- Phase 3: Drafting Mode (Pencil Marks) --- */
-.cell {
-  position: relative;
-}
-.cell input {
-  position: relative;
-  z-index: 2;
-  background: transparent;
-}
-.notes-grid {
-  position: absolute;
-  inset: 2px;
-  display: grid;
-  pointer-events: none; /* Lets clicks pass right through to the input */
-  color: var(--accent);
-  opacity: 0.85;
-  text-align: center;
-  align-items: center;
-  z-index: 1; /* Sits behind the main input text */
-  font-weight: 700;
-}
-body.dark .notes-grid {
-  color: var(--accent-2);
-}
-.notes-4 {
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  font-size: 0.5rem;
-}
-.notes-9 {
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  font-size: clamp(0.35rem, 1vw, 0.45rem);
-}
-.notes-16 {
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(4, 1fr);
-  font-size: clamp(0.2rem, 0.6vw, 0.3rem);
 }
