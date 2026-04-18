@@ -37,6 +37,8 @@ const state = {
   solving: false,
   timerId: null,
   remainingSeconds: 0,
+  gameStartedAt: null,
+  elapsedBeforePause: 0,
   soundEnabled: true,
   soundPaused: false,
   customTimers: { easy: 15, medium: 25, hard: 45 }
@@ -102,6 +104,29 @@ function stopTimer() {
     clearInterval(state.timerId);
     state.timerId = null;
   }
+}
+
+function resetGameClock() {
+  state.elapsedBeforePause = 0;
+  state.gameStartedAt = Date.now();
+}
+
+function pauseGameClock() {
+  if (!state.gameStartedAt) return;
+  state.elapsedBeforePause += Math.floor((Date.now() - state.gameStartedAt) / 1000);
+  state.gameStartedAt = null;
+}
+
+function resumeGameClock() {
+  if (!state.gameStartedAt) state.gameStartedAt = Date.now();
+}
+
+function getElapsedSeconds() {
+  let elapsed = Number(state.elapsedBeforePause || 0);
+  if (state.gameStartedAt) {
+    elapsed += Math.floor((Date.now() - state.gameStartedAt) / 1000);
+  }
+  return Math.max(0, elapsed);
 }
 
 function startManualTimer(resume = false) {
@@ -308,6 +333,7 @@ function setGame(puzzle) {
 function startNewGame() {
   const puzzle = generatePuzzle(state.size, state.difficulty);
   setGame(puzzle);
+  resetGameClock();
   stopTimer();
   state.remainingSeconds = currentTimerSeconds();
   $('countdown').textContent = formatTime(state.remainingSeconds);
@@ -366,13 +392,15 @@ function checkWin() {
       }
     }
   }
+  const elapsedSec = Math.max(1, getElapsedSeconds());
   stopTimer();
+  pauseGameClock();
   message('Great job! Puzzle solved.');
   updateStreak();
   showWinCelebration();
   const username = $('username').value.trim() || 'Guest';
   const region = $('regionInput')?.value?.trim() || 'Global';
-  const elapsedSec = Math.max(1, currentTimerSeconds() - (state.remainingSeconds || 0));
+  
   const score = Math.round(100000 / (elapsedSec + 1));
   saveScore(username, score, state.difficulty, state.size, region, elapsedSec);
 }
@@ -426,6 +454,7 @@ async function loadDaily() {
     const payload = await resp.json();
     if (payload?.puzzle?.length) {
       setGame(payload.puzzle);
+      resetGameClock();
       stopTimer();
       state.remainingSeconds = currentTimerSeconds();
       $('countdown').textContent = formatTime(state.remainingSeconds);
@@ -453,7 +482,9 @@ function saveProgress() {
     puzzle: state.puzzle,
     board: state.board,
     aiTime: $('aiTime').textContent,
-    countdown: $('countdown').textContent
+    countdown: $('countdown').textContent,
+    gameStartedAt: state.gameStartedAt,
+    elapsedBeforePause: state.elapsedBeforePause
   };
   localStorage.setItem('sudoku_progress', JSON.stringify(payload));
 }
@@ -474,6 +505,8 @@ function resumeProgress() {
     renderGrid();
     $('aiTime').textContent = data.aiTime || '0.000s';
     const sec = (data.countdown || formatTime(currentTimerSeconds())).split(':');
+    state.elapsedBeforePause = Number(data.elapsedBeforePause || 0);
+    state.gameStartedAt = data.gameStartedAt ? Number(data.gameStartedAt) : Date.now();
     state.remainingSeconds = Number(sec[0] || 0) * 60 + Number(sec[1] || 0);
     $('countdown').textContent = formatTime(state.remainingSeconds || currentTimerSeconds());
     showPage('gamePage');
@@ -504,8 +537,18 @@ function bindUI() {
   $('solveBtn').addEventListener('click', () => solveWithTime(state.mode === 'ai'));
   $('dailyBtn').addEventListener('click', loadDaily);
   $('closeWinModal').addEventListener('click', () => $('winModal').classList.add('hidden'));
-  $('startBtn').addEventListener('click', () => { if (state.mode === 'manual') startManualTimer(true); });
-  $('pauseBtn').addEventListener('click', () => { stopTimer(); message('Game paused.'); saveProgress(); });
+   $('startBtn').addEventListener('click', () => {
+    if (state.mode === 'manual') {
+      resumeGameClock();
+      startManualTimer(true);
+    }
+  });
+  $('pauseBtn').addEventListener('click', () => {
+    stopTimer();
+    pauseGameClock();
+    message('Game paused.');
+    saveProgress();
+  });
   $('settingSound').addEventListener('change', (e) => { state.soundEnabled = e.target.checked; if (!state.soundEnabled) state.soundPaused = true; localStorage.setItem('sudoku_sound', state.soundEnabled ? 'on' : 'off'); });
   $('settingDark').addEventListener('change', (e) => { document.body.classList.toggle('dark', e.target.checked); $('themeToggle').checked = e.target.checked; localStorage.setItem('sudoku_theme', e.target.checked ? 'dark' : 'light'); });
   $('saveTimerBtn').addEventListener('click', () => {
@@ -523,10 +566,12 @@ function bindUI() {
     state.mode = e.target.value;
     $('modeLabel').textContent = state.mode === 'manual' ? 'Manual' : 'AI';
     if (state.mode === 'manual') {
+      resumeGameClock();
       $('countdown').textContent = formatTime(currentTimerSeconds());
       stopTimer();
     } else {
       stopTimer();
+      pauseGameClock();
       $('countdown').textContent = '--:--';
     }
     message(`Mode switched to ${state.mode.toUpperCase()}.`);
