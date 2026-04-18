@@ -113,12 +113,23 @@
       <p class="small">Puzzle opens with animated board in Game page.</p>
     </section>
 
-    <section id="leaderboardPage" class="page hidden card parchment">
+   <section id="leaderboardPage" class="page hidden card parchment">
       <h2>Global Leaderboard</h2>
-      <table class="leader-table">
-        <thead><tr><th>Player Name</th><th>Size</th><th>Score</th><th>Region</th><th>Time</th></tr></thead>
-        <tbody id="leaderboardTableBody"></tbody>
-      </table>
+      <div style="overflow-x: auto; width: 100%;">
+        <table class="leader-table">
+          <thead>
+            <tr>
+              <th>Player Name</th>
+              <th>Difficulty</th>
+              <th>Size</th>
+              <th>Score</th>
+              <th>Region</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardTableBody"></tbody>
+        </table>
+      </div>
     </section>
 
     <section id="aboutPage" class="page hidden card parchment major-panel">
