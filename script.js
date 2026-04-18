@@ -90,19 +90,15 @@ function formatDuration(sec) {
 
 function playTick() {
   if (state.mode !== 'manual' || !state.soundEnabled || state.soundPaused) return;
-
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-
     osc.type = 'square';
     osc.frequency.value = 820;
     gain.gain.value = 0.015;
-
     osc.connect(gain);
     gain.connect(ctx.destination);
-
     osc.start();
     osc.stop(ctx.currentTime + 0.05);
   } catch {
@@ -134,11 +130,9 @@ function resumeGameClock() {
 
 function getElapsedSeconds() {
   let elapsed = Number(state.elapsedBeforePause || 0);
-
   if (state.gameStartedAt) {
     elapsed += Math.floor((Date.now() - state.gameStartedAt) / 1000);
   }
-
   return Math.max(0, elapsed);
 }
 
@@ -147,23 +141,19 @@ function startManualTimer(resume = false) {
   if (state.mode !== 'manual') return;
 
   resumeGameClock();
-
   if (!resume || !state.remainingSeconds) {
     state.remainingSeconds = currentTimerSeconds();
   }
 
   $('countdown').textContent = formatTime(state.remainingSeconds);
-
   state.timerId = setInterval(() => {
     state.remainingSeconds -= 1;
-
     if (state.remainingSeconds < 0) {
       stopTimer();
       pauseGameClock();
       message('⏰ Time is up! Start a new puzzle.');
       return;
     }
-
     $('countdown').textContent = formatTime(state.remainingSeconds);
     playTick();
     saveProgress();
@@ -183,11 +173,8 @@ function showPage(pageId) {
 
   const lbIcon = $('leaderboardIcon');
   if (lbIcon) {
-    if (pageId === 'homePage') {
-      lbIcon.classList.remove('hidden');
-    } else {
-      lbIcon.classList.add('hidden');
-    }
+    if (pageId === 'homePage') lbIcon.classList.remove('hidden');
+    else lbIcon.classList.add('hidden');
   }
 }
 
@@ -215,7 +202,6 @@ function permuteSolved(size) {
       solved[r][c] = map.get(solved[r][c]);
     }
   }
-
   return solved;
 }
 
@@ -228,11 +214,7 @@ function generatePuzzle(size, difficulty) {
   while (attempts < holes * 3) {
     const r = Math.floor(Math.random() * size);
     const c = Math.floor(Math.random() * size);
-
-    if (puzzle[r][c] !== '') {
-      puzzle[r][c] = '';
-    }
-
+    if (puzzle[r][c] !== '') puzzle[r][c] = '';
     if (puzzle.flat().filter((x) => x === '').length >= holes) break;
     attempts++;
   }
@@ -247,7 +229,6 @@ function getBoxSize(n) {
 
 function isValid(board, row, col, value) {
   const n = board.length;
-
   for (let i = 0; i < n; i++) {
     if (i !== col && board[row][i] === value) return false;
     if (i !== row && board[i][col] === value) return false;
@@ -262,7 +243,6 @@ function isValid(board, row, col, value) {
       if ((r !== row || c !== col) && board[r][c] === value) return false;
     }
   }
-
   return true;
 }
 
@@ -274,29 +254,21 @@ function getCandidates(board, row, col) {
 
 function selectMRV(board) {
   let best = null;
-
   for (let r = 0; r < board.length; r++) {
     for (let c = 0; c < board.length; c++) {
       if (board[r][c] !== '') continue;
-
       const cand = getCandidates(board, r, c);
       if (cand.length === 0) return { row: r, col: c, cand };
-
-      if (!best || cand.length < best.cand.length) {
-        best = { row: r, col: c, cand };
-      }
-
+      if (!best || cand.length < best.cand.length) best = { row: r, col: c, cand };
       if (best && best.cand.length === 1) return best;
     }
   }
-
   return best;
 }
 
 function solveCSP(board) {
   const target = selectMRV(board);
   if (!target) return true;
-
   const { row, col, cand } = target;
 
   for (const v of cand) {
@@ -304,7 +276,6 @@ function solveCSP(board) {
     if (solveCSP(board)) return true;
     board[row][col] = '';
   }
-
   return false;
 }
 
@@ -322,10 +293,8 @@ function updateHighlights(r, c) {
   const bc = Math.floor(c / box) * box;
 
   const cells = document.querySelectorAll('.cell');
-
   cells.forEach((cell, idx) => {
     cell.classList.remove('selected', 'highlight-peer', 'highlight-match');
-
     const i = Math.floor(idx / n);
     const j = idx % n;
 
@@ -359,7 +328,7 @@ function renderGrid() {
       const input = document.createElement('input');
       input.setAttribute('data-r', r);
       input.setAttribute('data-c', c);
-      input.maxLength = n === 16 ? 2 : 1; // Restored dynamic length for 16x16
+      input.maxLength = n === 16 ? 2 : 1;
       input.value = state.board[r][c];
 
       if (state.fixed.has(`${r},${c}`)) {
@@ -372,7 +341,6 @@ function renderGrid() {
         if (typeof updateHighlights === 'function') updateHighlights(r, c);
       });
 
-      // Arrow Key Navigation
       input.addEventListener('keydown', (e) => {
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
           e.preventDefault(); 
@@ -409,7 +377,7 @@ function onInput(e, r, c) {
     resumeGameClock();
   }
 
-  const raw = e.target.value.trim(); // Restored standard input processing
+  const raw = e.target.value.trim();
   const allowed = SYMBOLS[state.size];
 
   if (!allowed.includes(raw)) {
@@ -434,6 +402,9 @@ function onInput(e, r, c) {
 
   if (typeof updateHighlights === 'function') updateHighlights(r, c);
   saveProgress();
+  
+  // NEW: Auto-check silently when a number is typed
+  checkWin(true); 
 }
 
 function setGame(puzzle) {
@@ -518,7 +489,6 @@ function provideHint() {
     for (let c = 0; c < state.size; c++) {
       if (state.board[r][c] === '') {
         const cand = getCandidates(state.board, r, c);
-
         if (cand.length === 1) {
           const val = cand[0];
           state.board[r][c] = val;
@@ -527,6 +497,7 @@ function provideHint() {
           state.usedAI = true;
           message(`💡 Hint: Row ${r + 1}, Col ${c + 1} must be ${val}. Only valid candidate.`);
           saveProgress();
+          checkWin(true); // NEW: Auto-check in case hint finishes the board
           return;
         }
       }
@@ -534,7 +505,6 @@ function provideHint() {
   }
 
   const working = deepCopy(state.board);
-
   if (!solveCSP(working)) {
     message('No solution possible from current state.');
     return;
@@ -550,20 +520,21 @@ function provideHint() {
         state.usedAI = true;
         message(`💡 AI Hint: ${correctVal} fits at Row ${r + 1}, Col ${c + 1}.`);
         saveProgress();
+        checkWin(true); // NEW: Auto-check in case hint finishes the board
         return;
       }
     }
   }
-
   message('Board already complete!');
 }
 
-function checkWin() {
+// NEW: Added silent parameter for Auto-Check functionality
+function checkWin(silent = false) {
   for (let r = 0; r < state.size; r++) {
     for (let c = 0; c < state.size; c++) {
       const val = state.board[r][c];
       if (!val || !isValid(state.board, r, c, val)) {
-        message('Not solved yet.');
+        if (!silent) message('Not solved yet.');
         return;
       }
     }
@@ -625,12 +596,13 @@ async function loadLeaderboard() {
     const resp = await fetch('/leaderboard');
     const data = await resp.json();
 
+    // NEW: Added fallbacks (|| 'Unknown') to prevent JS crashing on old database rows
     $('leaderboardList').innerHTML = data
       .map(
         (x) =>
           `<li style="margin-bottom: 0.5rem; line-height: 1.4;">
-            <strong>${x.username}</strong><br>
-            <span style="font-size: 0.85em; opacity: 0.8;">${x.difficulty.toUpperCase()} [${x.size}×${x.size}] — ${x.score} pts • ${formatDuration(x.time_seconds)} (${x.region || 'Global'})</span>
+            <strong>${x.username || 'Guest'}</strong><br>
+            <span style="font-size: 0.85em; opacity: 0.8;">${(x.difficulty || 'medium').toUpperCase()} [${x.size}×${x.size}] — ${x.score} pts • ${formatDuration(x.time_seconds)} (${x.region || 'Global'})</span>
           </li>`
       )
       .join('');
@@ -641,9 +613,9 @@ async function loadLeaderboard() {
         .map(
           (x) =>
             `<tr>
-              <td style="font-weight: 600;">${x.username}</td>
-              <td style="text-transform: capitalize;">${x.difficulty}</td>
-              <td>${x.size}×${x.size}</td>
+              <td style="font-weight: 600;">${x.username || 'Guest'}</td>
+              <td style="text-transform: capitalize;">${x.difficulty || 'medium'}</td>
+              <td>${x.size || 9}×${x.size || 9}</td>
               <td>${x.score}</td>
               <td>${x.region || 'Global'}</td>
               <td>${formatDuration(x.time_seconds)}</td>
@@ -651,7 +623,8 @@ async function loadLeaderboard() {
         )
         .join('');
     }
-  } catch {
+  } catch (err) {
+    console.error("Leaderboard Error:", err);
     $('leaderboardList').innerHTML = '<li>Leaderboard unavailable.</li>';
   }
 }
@@ -706,7 +679,6 @@ function saveProgress() {
     usedAI: state.usedAI,
     selected: state.selected
   };
-
   localStorage.setItem('sudoku_progress', JSON.stringify(payload));
 }
 
@@ -776,16 +748,14 @@ function bindSidebar() {
 function bindUI() {
   $('newBtn').addEventListener('click', startNewGame);
   $('shuffleBtn').addEventListener('click', startNewGame);
-  $('checkBtn').addEventListener('click', checkWin);
+  $('checkBtn').addEventListener('click', () => checkWin(false));
   $('solveBtn').addEventListener('click', () => solveWithTime(state.mode === 'ai'));
   $('hintBtn').addEventListener('click', provideHint);
   $('dailyBtn').addEventListener('click', loadDaily);
   $('closeWinModal').addEventListener('click', () => $('winModal').classList.add('hidden'));
 
   $('startBtn').addEventListener('click', () => {
-    if (state.mode === 'manual') {
-      startManualTimer(true);
-    }
+    if (state.mode === 'manual') startManualTimer(true);
   });
 
   $('pauseBtn').addEventListener('click', () => {
@@ -817,7 +787,6 @@ function bindUI() {
     if (state.mode === 'manual' && !state.timerId) {
       $('countdown').textContent = formatTime(state.remainingSeconds || currentTimerSeconds());
     }
-
     message('Custom timers saved.');
   });
 
@@ -843,7 +812,6 @@ function bindUI() {
       pauseGameClock();
       $('countdown').textContent = '--:--';
     }
-
     message(`Mode switched to ${state.mode.toUpperCase()}.`);
   });
 
@@ -864,7 +832,6 @@ function bindUI() {
   });
 
   const screen = $('loadingScreen');
-
   const enter = () => {
     screen.classList.add('hidden');
     $('app').classList.remove('hidden');
