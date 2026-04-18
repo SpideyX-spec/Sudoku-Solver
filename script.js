@@ -387,6 +387,7 @@ function renderGrid() {
       });
 
       input.addEventListener('keydown', (e) => {
+        // Phase 3: Handle Backspace/Delete to clear notes
         if (state.draftMode && (e.key === 'Backspace' || e.key === 'Delete') && state.board[r][c] === '') {
           e.preventDefault();
           state.notes[r][c].clear();
@@ -394,6 +395,27 @@ function renderGrid() {
           saveProgress();
           const activeInput = document.querySelector(`input[data-r="${r}"][data-c="${c}"]`);
           if (activeInput) activeInput.focus();
+          return;
+        }
+
+        // Phase 4: Keyboard Navigation Mapping
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+          e.preventDefault();
+          let nextR = r;
+          let nextC = c;
+
+          if (e.key === 'ArrowUp') nextR = (r - 1 + n) % n;
+          if (e.key === 'ArrowDown') nextR = (r + 1) % n;
+          if (e.key === 'ArrowLeft') nextC = (c - 1 + n) % n;
+          if (e.key === 'ArrowRight') nextC = (c + 1) % n;
+
+          const nextInput = document.querySelector(`input[data-r="${nextR}"][data-c="${nextC}"]`);
+          if (nextInput) {
+            nextInput.focus();
+            setTimeout(() => {
+              nextInput.setSelectionRange(nextInput.value.length, nextInput.value.length);
+            }, 0);
+          }
         }
       });
 
@@ -442,6 +464,7 @@ function onInput(e, r, c) {
   }
 
   state.board[r][c] = raw;
+  e.target.value = raw;
   state.notes[r][c].clear();
 
   const parent = e.target.parentElement;
@@ -742,7 +765,7 @@ function saveProgress() {
     usedAI: state.usedAI,
     selected: state.selected,
     draftMode: state.draftMode,
-    notes: state.notes.map(row => row.map(set => Array.from(set)))
+    notes: state.notes.map((row) => row.map((set) => Array.from(set)))
   };
 
   localStorage.setItem('sudoku_progress', JSON.stringify(payload));
@@ -769,8 +792,10 @@ function resumeProgress() {
     }
 
     state.notes = data.notes
-      ? data.notes.map(row => row.map(arr => new Set(arr)))
-      : Array.from({ length: state.size }, () => Array.from({ length: state.size }, () => new Set()));
+      ? data.notes.map((row) => row.map((arr) => new Set(arr)))
+      : Array.from({ length: state.size }, () =>
+          Array.from({ length: state.size }, () => new Set())
+        );
 
     $('modeSelect').value = state.mode;
     $('sizeSelect').value = String(state.size);
@@ -781,8 +806,10 @@ function resumeProgress() {
     state.selected = data.selected || null;
     state.draftMode = data.draftMode || false;
     state.notes = data.notes
-      ? data.notes.map(row => row.map(arr => new Set(arr)))
-      : Array.from({ length: state.size }, () => Array.from({ length: state.size }, () => new Set()));
+      ? data.notes.map((row) => row.map((arr) => new Set(arr)))
+      : Array.from({ length: state.size }, () =>
+          Array.from({ length: state.size }, () => new Set())
+        );
 
     renderGrid();
 
@@ -840,7 +867,11 @@ function bindUI() {
     const draftBtn = $('draftBtn');
     draftBtn.textContent = state.draftMode ? '📝 Draft: ON' : '📝 Draft: OFF';
     draftBtn.style.background = state.draftMode ? 'linear-gradient(135deg, #2b9e60, #45d688)' : '';
-    message(state.draftMode ? 'Draft Mode ON: Type numbers to add pencil marks.' : 'Draft Mode OFF: Numbers will finalize the cell.');
+    message(
+      state.draftMode
+        ? 'Draft Mode ON: Type numbers to add pencil marks.'
+        : 'Draft Mode OFF: Numbers will finalize the cell.'
+    );
     saveProgress();
   });
 
@@ -859,8 +890,7 @@ function bindUI() {
 
   $('settingSound').addEventListener('change', (e) => {
     state.soundEnabled = e.target.checked;
-    if (!state.soundEnabled) state.soundPaused = true;
-    else state.soundPaused = false;
+    state.soundPaused = !state.soundEnabled;
     localStorage.setItem('sudoku_sound', state.soundEnabled ? 'on' : 'off');
   });
 
