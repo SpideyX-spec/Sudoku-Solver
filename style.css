@@ -145,7 +145,6 @@ body.dark .cell input{color:#f8fbff;font-weight:800}
 body.dark .board-wrap{background:rgba(19,28,45,.95)}
 body.dark .sudoku-grid.size-16 .cell input{font-weight:700}
 
-
 /* --- final game layout overrides --- */
 .app{max-width:min(1400px,95vw)}
 #gamePage{
@@ -192,7 +191,6 @@ body.dark .sudoku-grid.size-16 .cell input{font-weight:700}
 
 #settingsPage .buttons button{min-width:170px}
 
-
 /* overlap + spacing fixes */
 .menu-toggle{left:8px;top:8px}
 .leaderboard-icon{right:12px;top:12px;z-index:16}
@@ -211,7 +209,6 @@ body.menu-open .leaderboard-icon{opacity:.2;pointer-events:none}
   #gamePage .hud{margin-top:1rem}
   #gamePage .sudoku-grid{width:min(96vw,420px)}
 }
-
 
 /* final cleanup: no elements behind board + clear pages */
 .sidebar{background:rgba(246,239,223,1)!important;backdrop-filter:none!important;z-index:30}
@@ -236,7 +233,6 @@ body.dark .sidebar{background:rgba(32,41,58,1)!important}
   #gamePage{grid-template-columns:1fr!important}
   .controls .row.buttons{grid-template-columns:1fr!important}
 }
-
 
 /* ===== responsive + day/night fixes ===== */
 :root{
@@ -340,4 +336,10 @@ body.dark input {
   display: block;
   margin-bottom: 0.8rem;
   font-size: 1.1rem;
+}
+
+/* Fix for Dark Mode Dropdown Options */
+body.dark option {
+  background-color: #252f44;
+  color: #eef3ff;
 }
