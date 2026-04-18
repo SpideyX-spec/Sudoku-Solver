@@ -394,7 +394,10 @@ async function solveWithTime(animated = false) {
   if (state.solving) return;
   state.solving = true;
 
-  const working = deepCopy(state.board);
+  // OVERRIDE: We pull from state.puzzle instead of state.board.
+  // This automatically clears any incorrect inputs the player made 
+  // before running the solver, preventing a crash and showing the correct answer.
+  const working = deepCopy(state.puzzle);
   const t0 = performance.now();
   const solved = solveCSP(working);
   const elapsed = ((performance.now() - t0) / 1000).toFixed(3);
@@ -423,9 +426,12 @@ async function solveWithTime(animated = false) {
 
   stopTimer();
   pauseGameClock();
-  message(`Solved in ${elapsed}s using CSP (MRV + forward-checking).`);
+  message(`Puzzle Auto-Solved! Mistakes corrected and board finished.`);
   state.solving = false;
 
+  // COMMENTED OUT: We do not save AI solves to the Leaderboard.
+  // This prevents the AI from recording instant 0m:00s times.
+  /*
   const username = $('username').value.trim() || 'Guest';
   const region = $('regionInput')?.value?.trim() || 'Global';
   const elapsedSec = Math.max(1, Math.round(parseFloat(elapsed)));
@@ -438,6 +444,7 @@ async function solveWithTime(animated = false) {
     region,
     elapsedSec
   );
+  */
 }
 
 function checkWin() {
@@ -460,7 +467,7 @@ function checkWin() {
 
   const username = $('username').value.trim() || 'Guest';
   const region = $('regionInput')?.value?.trim() || 'Global';
-  const score = Math.round(100 / (elapsedSec + 1));
+  const score = Math.round(100000 / (elapsedSec + 1));
 
   saveScore(username, score, state.difficulty, state.size, region, elapsedSec);
 }
