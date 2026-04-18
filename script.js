@@ -460,7 +460,7 @@ function checkWin() {
 
   const username = $('username').value.trim() || 'Guest';
   const region = $('regionInput')?.value?.trim() || 'Global';
-  const score = Math.round(100000 / (elapsedSec + 1));
+  const score = Math.round(100 / (elapsedSec + 1));
 
   saveScore(username, score, state.difficulty, state.size, region, elapsedSec);
 }
