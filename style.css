@@ -85,9 +85,42 @@ body.dark button{background:linear-gradient(135deg,#6f8ee8,#5fcfd2);color:#f8fbf
 .switch input:checked + .slider{background:var(--accent-2)}
 .switch input:checked + .slider:before{transform:translateX(24px)}
 
-.leaderboard-panel{position:fixed;right:12px;top:62px;z-index:14;width:min(92vw,360px)}
-.leader-table{width:100%;border-collapse:collapse}.leader-table th,.leader-table td{padding:.4rem;border-bottom:1px solid color-mix(in srgb,var(--accent) 35%, transparent)}
+/* --- Upgraded Leaderboard Table Formatting --- */
+.leader-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center; /* Centers the data for a structured look */
+  margin-top: 0.5rem;
+  font-family: 'Inter', sans-serif;
+}
 
+.leader-table th {
+  padding: 0.8rem 0.5rem;
+  background-color: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+  font-weight: 800;
+  border-bottom: 2px solid var(--accent);
+  white-space: nowrap;
+}
+
+.leader-table td {
+  padding: 0.8rem 0.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+/* Align only the Player Name to the left so it reads naturally */
+.leader-table td:first-child, .leader-table th:first-child {
+  text-align: left;
+}
+
+/* Subtle alternating row colors for readability */
+.leader-table tr:nth-child(even) td {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+body.dark .leader-table tr:nth-child(even) td {
+  background-color: rgba(255, 255, 255, 0.02);
+}
 .win-modal{position:fixed;inset:0;background:rgba(10,14,22,.6);display:grid;place-items:center;z-index:20}
 .win-card{width:min(90vw,420px);background:var(--panel);border-radius:16px;padding:1rem;text-align:center}
 .crackers{font-size:1.3rem;animation:sparkle 1.2s linear infinite}@keyframes sparkle{0%,100%{opacity:.25}50%{opacity:1}}
