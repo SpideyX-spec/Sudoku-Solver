@@ -46,6 +46,8 @@ const state = {
   soundPaused: false,
   usedAI: false,
   selected: null,
+  draftMode: false,
+  notes: [],
   customTimers: { easy: 15, medium: 25, hard: 45 }
 };
 
@@ -342,7 +344,6 @@ function updateHighlights(r, c) {
 function renderGrid() {
   const n = state.size;
   const grid = $('gridContainer');
-
   grid.innerHTML = '';
   grid.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
   grid.classList.remove('size-4', 'size-9', 'size-16');
@@ -354,11 +355,19 @@ function renderGrid() {
       cell.className = 'cell';
 
       const box = getBoxSize(n);
-      if ((c + 1) % box === 0 && c !== n - 1) {
-        cell.style.borderRight = '3px solid var(--line)';
-      }
-      if ((r + 1) % box === 0 && r !== n - 1) {
-        cell.style.borderBottom = '3px solid var(--line)';
+      if ((c + 1) % box === 0 && c !== n - 1) cell.style.borderRight = '3px solid var(--line)';
+      if ((r + 1) % box === 0 && r !== n - 1) cell.style.borderBottom = '3px solid var(--line)';
+
+      if (state.notes[r] && state.notes[r][c] && state.notes[r][c].size > 0 && state.board[r][c] === '') {
+        const notesDiv = document.createElement('div');
+        notesDiv.className = `notes-grid notes-${n}`;
+        for (let i = 0; i < n; i++) {
+          const sym = SYMBOLS[n][i];
+          const span = document.createElement('span');
+          span.textContent = state.notes[r][c].has(sym) ? sym : '';
+          notesDiv.appendChild(span);
+        }
+        cell.appendChild(notesDiv);
       }
 
       const input = document.createElement('input');
@@ -373,7 +382,20 @@ function renderGrid() {
       }
 
       input.addEventListener('input', (e) => onInput(e, r, c));
-      input.addEventListener('focus', () => updateHighlights(r, c));
+      input.addEventListener('focus', () => {
+        if (typeof updateHighlights === 'function') updateHighlights(r, c);
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (state.draftMode && (e.key === 'Backspace' || e.key === 'Delete') && state.board[r][c] === '') {
+          e.preventDefault();
+          state.notes[r][c].clear();
+          renderGrid();
+          saveProgress();
+          const activeInput = document.querySelector(`input[data-r="${r}"][data-c="${c}"]`);
+          if (activeInput) activeInput.focus();
+        }
+      });
 
       cell.appendChild(input);
       grid.appendChild(cell);
@@ -393,19 +415,36 @@ function onInput(e, r, c) {
   const raw = e.target.value.trim();
   const allowed = SYMBOLS[state.size];
 
+  if (state.draftMode) {
+    e.target.value = state.board[r][c];
+    if (allowed.includes(raw) && state.board[r][c] === '') {
+      const notesSet = state.notes[r][c];
+      if (notesSet.has(raw)) notesSet.delete(raw);
+      else notesSet.add(raw);
+      renderGrid();
+      saveProgress();
+      const activeInput = document.querySelector(`input[data-r="${r}"][data-c="${c}"]`);
+      if (activeInput) {
+        activeInput.focus();
+        activeInput.setSelectionRange(activeInput.value.length, activeInput.value.length);
+      }
+    }
+    return;
+  }
+
   if (!allowed.includes(raw)) {
     e.target.value = '';
     state.board[r][c] = '';
-    updateHighlights(r, c);
+    state.notes[r][c].clear();
+    if (typeof updateHighlights === 'function') updateHighlights(r, c);
     saveProgress();
     return;
   }
 
   state.board[r][c] = raw;
-  updateHighlights(r, c);
+  state.notes[r][c].clear();
 
   const parent = e.target.parentElement;
-
   if (!isValid(state.board, r, c, raw)) {
     parent.classList.add('error');
     message('Invalid move.');
@@ -414,6 +453,7 @@ function onInput(e, r, c) {
     message('');
   }
 
+  if (typeof updateHighlights === 'function') updateHighlights(r, c);
   saveProgress();
 }
 
@@ -422,6 +462,10 @@ function setGame(puzzle) {
   state.board = deepCopy(puzzle);
   state.fixed = new Set();
   state.selected = null;
+
+  state.notes = Array.from({ length: state.size }, () =>
+    Array.from({ length: state.size }, () => new Set())
+  );
 
   for (let r = 0; r < state.size; r++) {
     for (let c = 0; c < state.size; c++) {
@@ -500,6 +544,7 @@ function provideHint() {
         if (cand.length === 1) {
           const val = cand[0];
           state.board[r][c] = val;
+          state.notes[r][c].clear();
           renderGrid();
           updateHighlights(r, c);
           state.usedAI = true;
@@ -523,6 +568,7 @@ function provideHint() {
       if (state.board[r][c] === '') {
         const correctVal = working[r][c];
         state.board[r][c] = correctVal;
+        state.notes[r][c].clear();
         renderGrid();
         updateHighlights(r, c);
         state.usedAI = true;
@@ -680,7 +726,9 @@ function saveProgress() {
     gameStartedAt: state.gameStartedAt,
     elapsedBeforePause: state.elapsedBeforePause,
     usedAI: state.usedAI,
-    selected: state.selected
+    selected: state.selected,
+    draftMode: state.draftMode,
+    notes: state.notes.map(row => row.map(set => Array.from(set)))
   };
 
   localStorage.setItem('sudoku_progress', JSON.stringify(payload));
@@ -698,6 +746,17 @@ function resumeProgress() {
     state.difficulty = data.difficulty || 'medium';
     state.usedAI = data.usedAI || false;
     state.selected = data.selected || null;
+    state.draftMode = data.draftMode || false;
+
+    const draftBtn = $('draftBtn');
+    if (draftBtn) {
+      draftBtn.textContent = state.draftMode ? '📝 Draft: ON' : '📝 Draft: OFF';
+      draftBtn.style.background = state.draftMode ? 'linear-gradient(135deg, #2b9e60, #45d688)' : '';
+    }
+
+    state.notes = data.notes
+      ? data.notes.map(row => row.map(arr => new Set(arr)))
+      : Array.from({ length: state.size }, () => Array.from({ length: state.size }, () => new Set()));
 
     $('modeSelect').value = state.mode;
     $('sizeSelect').value = String(state.size);
@@ -706,6 +765,11 @@ function resumeProgress() {
     setGame(data.puzzle?.length ? data.puzzle : generatePuzzle(state.size, state.difficulty));
     state.board = data.board?.length ? data.board : state.board;
     state.selected = data.selected || null;
+    state.draftMode = data.draftMode || false;
+    state.notes = data.notes
+      ? data.notes.map(row => row.map(arr => new Set(arr)))
+      : Array.from({ length: state.size }, () => Array.from({ length: state.size }, () => new Set()));
+
     renderGrid();
 
     $('aiTime').textContent = data.aiTime || '0.000s';
@@ -756,6 +820,15 @@ function bindUI() {
   $('hintBtn').addEventListener('click', provideHint);
   $('dailyBtn').addEventListener('click', loadDaily);
   $('closeWinModal').addEventListener('click', () => $('winModal').classList.add('hidden'));
+
+  $('draftBtn').addEventListener('click', () => {
+    state.draftMode = !state.draftMode;
+    const draftBtn = $('draftBtn');
+    draftBtn.textContent = state.draftMode ? '📝 Draft: ON' : '📝 Draft: OFF';
+    draftBtn.style.background = state.draftMode ? 'linear-gradient(135deg, #2b9e60, #45d688)' : '';
+    message(state.draftMode ? 'Draft Mode ON: Type numbers to add pencil marks.' : 'Draft Mode OFF: Numbers will finalize the cell.');
+    saveProgress();
+  });
 
   $('startBtn').addEventListener('click', () => {
     if (state.mode === 'manual') {
