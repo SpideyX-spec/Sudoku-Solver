@@ -482,7 +482,15 @@ function setGame(puzzle) {
 function startNewGame() {
   const puzzle = generatePuzzle(state.size, state.difficulty);
   state.usedAI = false;
+  state.draftMode = false;
   setGame(puzzle);
+
+  const draftBtn = $('draftBtn');
+  if (draftBtn) {
+    draftBtn.textContent = '📝 Draft: OFF';
+    draftBtn.style.background = '';
+  }
+
   resetGameClock();
   stopTimer();
   state.remainingSeconds = currentTimerSeconds();
@@ -496,7 +504,7 @@ async function solveWithTime(animated = false) {
   state.solving = true;
   state.usedAI = true;
 
-  const working = deepCopy(state.puzzle);
+  const working = deepCopy(state.board);
   const t0 = performance.now();
   const solved = solveCSP(working);
   const exactSeconds = ((performance.now() - t0) / 1000).toFixed(3);
@@ -514,6 +522,7 @@ async function solveWithTime(animated = false) {
       for (let c = 0; c < state.size; c++) {
         if (!state.fixed.has(`${r},${c}`)) {
           state.board[r][c] = working[r][c];
+          state.notes[r][c].clear();
           renderGrid();
           await new Promise((res) => setTimeout(res, 10));
         }
@@ -521,6 +530,9 @@ async function solveWithTime(animated = false) {
     }
   } else {
     state.board = working;
+    state.notes = Array.from({ length: state.size }, () =>
+      Array.from({ length: state.size }, () => new Set())
+    );
     renderGrid();
   }
 
@@ -602,7 +614,9 @@ function checkWin() {
 
   let username = $('username').value.trim() || 'Guest';
   const region = $('regionInput')?.value?.trim() || 'Global';
-  const score = Math.round(100000 / (elapsedSec + 1));
+
+  const maxTime = currentTimerSeconds();
+  const score = Math.max(1, Math.min(100, Math.round(((maxTime - elapsedSec) / maxTime) * 100)));
 
   if (state.usedAI) {
     username += ' 🤖 (AI)';
