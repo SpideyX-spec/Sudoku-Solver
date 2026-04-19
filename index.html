@@ -36,14 +36,23 @@
       <button class="nav-btn" data-page="settingsPage">📜 Settings</button>
     </nav>
 
-    <div class="sidebar-meta">
+   <div class="sidebar-meta">
+      <div id="playerProgression" class="hidden" style="margin-bottom: 1rem; border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); padding-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.4rem;">
+          <strong id="levelTitle" style="color: var(--accent); font-family: 'Cinzel', serif; font-size: 1.1rem;">Novice</strong>
+          <span id="xpText" style="font-size: 0.8rem; font-weight: 600; opacity: 0.8;">0 / 100 XP</span>
+        </div>
+        <div class="xp-bar-bg">
+          <div id="xpBarFill" class="xp-bar-fill"></div>
+        </div>
+      </div>
+
       <div>🔥 Streak: <span id="streakCount">0</span></div>
-      <label class="switch" title="Toggle day/night mode">
+      <label class="switch" title="Toggle day/night mode" style="margin-top: 0.5rem;">
         <input type="checkbox" id="themeToggle" />
         <span class="slider"></span>
       </label>
     </div>
-  </aside>
 
   <main id="app" class="app hidden">
     <header class="topbar parchment">
