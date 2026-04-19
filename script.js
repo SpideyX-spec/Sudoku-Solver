@@ -46,8 +46,7 @@ const state = {
   soundPaused: false,
   usedAI: false,
   selected: null,
-  currentUser: null, 
-  xp: 0, // NEW: Track local XP
+  currentUser: null,
   customTimers: { easy: 15, medium: 25, hard: 45 }
 };
 
@@ -56,16 +55,6 @@ const difficultyHoles = {
   medium: { 4: 7, 9: 45, 16: 120 },
   hard: { 4: 9, 9: 55, 16: 150 }
 };
-
-// --- PHASE 1: LEVEL TITLES & THRESHOLDS ---
-const LEVEL_RANKS = [
-  { threshold: 0, title: 'Novice' },
-  { threshold: 50, title: 'Beginner Solver' },
-  { threshold: 150, title: 'Logic Knight' },
-  { threshold: 300, title: 'Grid Master' },
-  { threshold: 600, title: 'Sudoku Sage' },
-  { threshold: 1200, title: 'Grandmaster' }
-];
 
 const $ = (id) => document.getElementById(id);
 
@@ -572,8 +561,7 @@ function checkWin(silent = false) {
     username += ' 🤖 (AI)';
   }
 
-  // Pass usedAI flag to server so it can calculate XP correctly
-  saveScore(username, score, state.difficulty, state.size, region, elapsedSec, state.usedAI);
+  saveScore(username, score, state.difficulty, state.size, region, elapsedSec);
 }
 
 function updateStreak() {
@@ -594,60 +582,18 @@ function hydrateStreak() {
   $('streakCount').textContent = Number(localStorage.getItem('sudoku_streak') || 0);
 }
 
-// --- PHASE 1: XP UI UPDATE FUNCTION ---
-function renderXP(totalXP) {
-  state.xp = totalXP;
-  let currentLvl = LEVEL_RANKS[0];
-  let nextLvl = LEVEL_RANKS[1];
-
-  // Find the player's correct rank bracket
-  for (let i = 0; i < LEVEL_RANKS.length; i++) {
-    if (totalXP >= LEVEL_RANKS[i].threshold) {
-      currentLvl = LEVEL_RANKS[i];
-      nextLvl = LEVEL_RANKS[i + 1] || LEVEL_RANKS[i];
-    } else {
-      break;
-    }
-  }
-
-  $('levelTitle').textContent = currentLvl.title;
-  $('playerProgression').classList.remove('hidden');
-
-  // Calculate percentage to fill the bar
-  if (currentLvl === nextLvl) {
-    // Max Level Reached
-    $('xpText').textContent = `${totalXP} XP (MAX)`;
-    $('xpBarFill').style.width = `100%`;
-  } else {
-    const xpIntoLevel = totalXP - currentLvl.threshold;
-    const xpNeeded = nextLvl.threshold - currentLvl.threshold;
-    const percentage = Math.min(100, Math.round((xpIntoLevel / xpNeeded) * 100));
-    
-    $('xpText').textContent = `${totalXP} / ${nextLvl.threshold} XP`;
-    $('xpBarFill').style.width = `${percentage}%`;
-  }
-}
-
-async function saveScore(username, score, difficulty, size, region, timeSeconds = 0, usedAI = false) {
+async function saveScore(username, score, difficulty, size, region, timeSeconds = 0) {
   try {
     const response = await fetch('/save_score', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, score, difficulty, size, region, timeSeconds, usedAI })
+      body: JSON.stringify({ username, score, difficulty, size, region, timeSeconds })
     });
     
     if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    const data = await response.json();
-    
-    // UPDATE XP BAR IF SERVER SENDS NEW XP!
-    if (data.new_xp !== undefined && state.currentUser) {
-      renderXP(data.new_xp);
-      message(`Score saved! You earned XP!`);
-    }
-
     await loadLeaderboard(); 
   } catch (error) {
     console.error("Save Score Error:", error);
@@ -822,8 +768,6 @@ async function verifySession() {
       $('loggedInDisplay').textContent = data.username;
       $('loggedInDisplay').classList.remove('hidden');
       $('logoutBtn').classList.remove('hidden');
-      // Load their XP into the bar!
-      renderXP(data.xp);
     }
   } catch (e) { console.log("Auth offline."); }
 }
@@ -857,9 +801,6 @@ async function handleAuth(endpoint) {
       $('authModal').classList.add('hidden');
       $('authUsername').value = '';
       $('authPassword').value = '';
-      
-      // Show their XP bar immediately after login!
-      renderXP(data.xp || 0);
       message(`Welcome, ${data.username}!`);
     } else {
       errText.textContent = data.error || 'Authentication failed.';
@@ -908,8 +849,6 @@ function bindUI() {
     $('openLoginBtn').classList.remove('hidden');
     $('loggedInDisplay').classList.add('hidden');
     $('logoutBtn').classList.add('hidden');
-    // Hide the XP bar when they log out
-    $('playerProgression').classList.add('hidden');
     message('Logged out successfully.');
   });
 
