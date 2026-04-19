@@ -401,3 +401,75 @@ body.dark .cell.highlight-peer {
 body.dark .cell.highlight-match {
   background-color: color-mix(in srgb, var(--accent-2) 40%, transparent);
 }
+
+/* --- Phase 6: Impressive About Page --- */
+.tech-stack {
+  display: flex;
+  justify-content: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+}
+.tech-pill {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  padding: 0.4rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.member-role {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  font-weight: 800;
+  opacity: 0.9;
+}
+.link-label {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin-top: 0.2rem;
+}
+/* Enhanced Interactive Hover Effects for Team Cards */
+.team-box {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
+  align-content: center;
+}
+.team-box:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--accent) 25%, transparent);
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.6);
+}
+body.dark .team-box:hover {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--accent-2) 15%, transparent);
+}
+.coordinator-box {
+  margin-top: 2.5rem;
+  text-align: center;
+  padding: 1.5rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent);
+  border: 2px dashed color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.special-box {
+  max-width: 300px;
+  margin: 0 auto;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.member-id {
+  font-size: 0.75rem;
+  font-family: monospace; /* Gives it that official, academic serial number look */
+  opacity: 0.65;
+  margin-top: 0.1rem;
+  margin-bottom: 0.3rem;
+  letter-spacing: 0.5px;
+}
