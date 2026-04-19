@@ -46,6 +46,7 @@ const state = {
   soundPaused: false,
   usedAI: false,
   selected: null,
+  currentUser: null, // NEW: Tracks who is logged in
   customTimers: { easy: 15, medium: 25, hard: 45 }
 };
 
@@ -541,13 +542,19 @@ function checkWin(silent = false) {
   const elapsedSec = Math.max(1, getElapsedSeconds());
   stopTimer();
   pauseGameClock();
-  message('Great job! Puzzle solved.');
   updateStreak();
   showWinCelebration();
 
-  let username = $('username').value.trim() || 'Guest';
+  // SECURE AUTH LOGIC: Only save if a user is logged in
+  let username = state.currentUser;
+  
+  if (!username) {
+    message('Puzzle Solved! Log in to save your score to the leaderboard.');
+    return;
+  }
+  
+  message('Great job! Puzzle solved.');
   const region = $('regionInput')?.value?.trim() || 'Global';
-
   const maxTime = currentTimerSeconds();
   const score = Math.max(1, Math.min(100, Math.round(((maxTime - elapsedSec) / maxTime) * 100)));
 
@@ -752,6 +759,59 @@ function bindSidebar() {
   $('leaderboardIcon').addEventListener('click', () => showPage('leaderboardPage'));
 }
 
+// --- PHASE 5: SECURE AUTH LOGIC ---
+async function verifySession() {
+  try {
+    const res = await fetch('/check_auth');
+    const data = await res.json();
+    if (data.logged_in) {
+      state.currentUser = data.username;
+      $('openLoginBtn').classList.add('hidden');
+      $('loggedInDisplay').textContent = data.username;
+      $('loggedInDisplay').classList.remove('hidden');
+      $('logoutBtn').classList.remove('hidden');
+    }
+  } catch (e) { console.log("Auth offline."); }
+}
+
+async function handleAuth(endpoint) {
+  const user = $('authUsername').value.trim();
+  const pass = $('authPassword').value;
+  const errText = $('authError');
+  errText.textContent = '';
+
+  if (!user || !pass) {
+    errText.textContent = 'Please fill all fields.';
+    return;
+  }
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: user, password: pass })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      state.currentUser = data.username;
+      $('openLoginBtn').classList.add('hidden');
+      $('loggedInDisplay').textContent = data.username;
+      $('loggedInDisplay').classList.remove('hidden');
+      $('logoutBtn').classList.remove('hidden');
+      
+      $('authModal').classList.add('hidden');
+      $('authUsername').value = '';
+      $('authPassword').value = '';
+      message(`Welcome, ${data.username}!`);
+    } else {
+      errText.textContent = data.error || 'Authentication failed.';
+    }
+  } catch (e) {
+    errText.textContent = 'Server connection error.';
+  }
+}
+
 function bindUI() {
   $('newBtn').addEventListener('click', startNewGame);
   $('shuffleBtn').addEventListener('click', startNewGame);
@@ -775,6 +835,24 @@ function bindUI() {
     pauseGameClock();
     message('Game paused.');
     saveProgress();
+  });
+
+  // Auth Modal Buttons
+  $('openLoginBtn').addEventListener('click', () => $('authModal').classList.remove('hidden'));
+  $('closeAuthModal').addEventListener('click', () => {
+    $('authModal').classList.add('hidden');
+    $('authError').textContent = '';
+  });
+  $('loginSubmitBtn').addEventListener('click', () => handleAuth('/login'));
+  $('registerSubmitBtn').addEventListener('click', () => handleAuth('/register'));
+  
+  $('logoutBtn').addEventListener('click', async () => {
+    await fetch('/logout', { method: 'POST' });
+    state.currentUser = null;
+    $('openLoginBtn').classList.remove('hidden');
+    $('loggedInDisplay').classList.add('hidden');
+    $('logoutBtn').classList.add('hidden');
+    message('Logged out successfully.');
   });
 
   $('settingSound').addEventListener('change', (e) => {
@@ -851,7 +929,6 @@ function bindUI() {
     $('sideBar').classList.remove('open');
     document.body.classList.remove('menu-open');
     
-    // Check if the panel exists before manipulating it
     const lbPanel = $('leaderboardPanel');
     if (lbPanel) lbPanel.classList.add('hidden');
   };
@@ -892,6 +969,7 @@ function initTheme() {
 }
 
 function init() {
+  verifySession(); // PHASE 5: Restores your login when you refresh the page!
   bindSidebar();
   bindUI();
   hydrateStreak();
