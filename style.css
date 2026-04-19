@@ -126,10 +126,6 @@ body.dark .leader-table tr:nth-child(even) td {
 @media(max-width:860px){.split{grid-template-columns:1fr}.sudoku-grid{width:min(92vw,390px)}}
 
 .bottom-line{margin:1rem auto 1.5rem;text-align:center;font-family:'Cormorant Garamond',serif;font-size:1.05rem;color:var(--text);opacity:.9}
-.team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.7rem;margin-top:.4rem}
-.team-box{display:grid;gap:.2rem;padding:.8rem;border-radius:12px;border:2px solid color-mix(in srgb,var(--accent) 55%, transparent);background:rgba(255,255,255,.35);text-decoration:none;color:var(--text)}
-.team-box strong{font-family:'Cormorant Garamond',serif;font-size:1.15rem}
-.member-icon,.link-icon{display:inline-flex;align-items:center;justify-content:center;width:1.2rem}
 .game-buttons{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))!important}
 .controls .row.buttons{margin-top:.25rem}
 
@@ -322,7 +318,6 @@ body.dark input {
   #gamePage .controls .row.buttons,
   .launch-grid,
   #settingsPage .timer-settings{grid-template-columns:1fr !important}
-  .team-grid{grid-template-columns:1fr}
   .leaderboard-panel{right:8px;left:8px;width:auto}
   .bottom-line{font-size:.92rem;padding:0 .4rem;text-align:center}
 }
@@ -421,6 +416,11 @@ body.dark .cell.highlight-match {
   color: var(--text);
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
+.team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.7rem;margin-top:.4rem}
+.team-box{display:grid;gap:.2rem;padding:.8rem;border-radius:12px;border:2px solid color-mix(in srgb,var(--accent) 55%, transparent);background:rgba(255,255,255,.35);text-decoration:none;color:var(--text)}
+.team-box strong{font-family:'Cormorant Garamond',serif;font-size:1.15rem}
+.member-icon,.link-icon{display:inline-flex;align-items:center;justify-content:center;width:1.2rem}
+
 .member-role {
   font-size: 0.7rem;
   text-transform: uppercase;
@@ -428,6 +428,14 @@ body.dark .cell.highlight-match {
   color: var(--accent);
   font-weight: 800;
   opacity: 0.9;
+}
+.member-id {
+  font-size: 0.75rem;
+  font-family: monospace;
+  opacity: 0.65;
+  margin-top: 0.1rem;
+  margin-bottom: 0.3rem;
+  letter-spacing: 0.5px;
 }
 .link-label {
   font-size: 0.85rem;
@@ -463,34 +471,4 @@ body.dark .team-box:hover {
   max-width: 300px;
   margin: 0 auto;
   background: color-mix(in srgb, var(--accent) 8%, transparent);
-}
-
-.member-id {
-  font-size: 0.75rem;
-  font-family: monospace; /* Gives it that official, academic serial number look */
-  opacity: 0.65;
-  margin-top: 0.1rem;
-  margin-bottom: 0.3rem;
-  letter-spacing: 0.5px;
-}
-
-/* --- Phase 1: XP Progress Bar Styles --- */
-.xp-bar-bg {
-  width: 100%;
-  height: 10px;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 6px;
-  overflow: hidden;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-}
-body.dark .xp-bar-bg {
-  background: rgba(255, 255, 255, 0.1);
-}
-.xp-bar-fill {
-  height: 100%;
-  width: 0%; /* Dynamic width controlled by JS */
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  border-radius: 6px;
-  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 60%, transparent);
 }
