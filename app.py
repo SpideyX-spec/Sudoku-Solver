@@ -15,6 +15,7 @@ DB_PATH = BASE_DIR / "sudoku.db"
 app = Flask(__name__, static_folder=str(BASE_DIR), static_url_path="")
 app.secret_key = "super_secret_sudoku_key"  # Required for session-based login
 
+
 # -----------------------------
 # DATABASE SETUP
 # -----------------------------
@@ -39,23 +40,18 @@ def ensure_schema(db: sqlite3.Connection) -> None:
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            xp INTEGER NOT NULL DEFAULT 0
+            password_hash TEXT NOT NULL
         )
         """
     )
 
-    # Safely upgrade existing tables if they are missing columns
-    score_columns = {row["name"] for row in db.execute("PRAGMA table_info(scores)").fetchall()}
-    if "region" not in score_columns:
-        db.execute("ALTER TABLE scores ADD COLUMN region TEXT NOT NULL DEFAULT 'Global'")
-    if "time_seconds" not in score_columns:
-        db.execute("ALTER TABLE scores ADD COLUMN time_seconds INTEGER NOT NULL DEFAULT 0")
+    columns = {row["name"] for row in db.execute("PRAGMA table_info(scores)").fetchall()}
 
-    # PHASE 1 UPGRADE: Add XP column if it doesn't exist yet
-    user_columns = {row["name"] for row in db.execute("PRAGMA table_info(users)").fetchall()}
-    if "xp" not in user_columns:
-        db.execute("ALTER TABLE users ADD COLUMN xp INTEGER NOT NULL DEFAULT 0")
+    if "region" not in columns:
+        db.execute("ALTER TABLE scores ADD COLUMN region TEXT NOT NULL DEFAULT 'Global'")
+
+    if "time_seconds" not in columns:
+        db.execute("ALTER TABLE scores ADD COLUMN time_seconds INTEGER NOT NULL DEFAULT 0")
 
     db.commit()
 
@@ -78,9 +74,16 @@ def close_db(exception: Exception | None) -> None:
 def init_db() -> None:
     db = sqlite3.connect(DB_PATH)
     db.row_factory = sqlite3.Row
+
+    schema_file = BASE_DIR / "schema.sql"
+    if schema_file.exists():
+        schema = schema_file.read_text(encoding="utf-8")
+        db.executescript(schema)
+
     ensure_schema(db)
     db.commit()
     db.close()
+
 
 # -----------------------------
 # SUDOKU HELPERS
@@ -101,15 +104,21 @@ def base_grid(size: int) -> list[list[str]]:
 
 def daily_puzzle(size: int, holes: int) -> list[list[str]]:
     import random
+
     seed = int(date.today().strftime("%Y%m%d")) + size
     random.seed(seed)
+
     grid = base_grid(size)
     empties = set()
+
     while len(empties) < holes:
         empties.add((random.randrange(size), random.randrange(size)))
+
     for r, c in empties:
         grid[r][c] = ""
+
     return grid
+
 
 # -----------------------------
 # PAGE ROUTE
@@ -118,8 +127,9 @@ def daily_puzzle(size: int, holes: int) -> list[list[str]]:
 def root():
     return send_from_directory(BASE_DIR, "index.html")
 
+
 # -----------------------------
-# SCORE & XP ROUTES
+# SCORE ROUTES
 # -----------------------------
 @app.post("/save_score")
 def save_score():
@@ -131,11 +141,8 @@ def save_score():
     time_seconds = max(0, int(payload.get("timeSeconds", payload.get("time_seconds", 0))))
     difficulty = str(payload.get("difficulty", "medium")).strip()[:16] or "medium"
     size = int(payload.get("size", 9))
-    used_ai = bool(payload.get("usedAI", False))
 
     db = get_db()
-    
-    # Save the score to the leaderboard
     db.execute(
         """
         INSERT INTO scores (username, region, score, time_seconds, difficulty, size)
@@ -143,26 +150,9 @@ def save_score():
         """,
         (username, region, score, time_seconds, difficulty, size),
     )
-    
-    # PHASE 1 UPGRADE: Award XP to logged-in users!
-    new_xp = 0
-    if username != "Guest" and "🤖" not in username:
-        # Calculate XP based on difficulty
-        xp_award = {"easy": 10, "medium": 20, "hard": 35}.get(difficulty.lower(), 10)
-        
-        # Give half XP if they used the AI Hint
-        if used_ai:
-            xp_award = xp_award // 2
-            
-        db.execute("UPDATE users SET xp = xp + ? WHERE username = ?", (xp_award, username))
-        
-        # Fetch their newly updated total XP
-        user_row = db.execute("SELECT xp FROM users WHERE username = ?", (username,)).fetchone()
-        if user_row:
-            new_xp = user_row["xp"]
-
     db.commit()
-    return jsonify({"ok": True, "new_xp": new_xp})
+
+    return jsonify({"ok": True})
 
 
 @app.get("/leaderboard")
@@ -176,23 +166,31 @@ def leaderboard():
         LIMIT 10
         """
     ).fetchall()
+
     return jsonify([dict(row) for row in rows])
 
+
+# -----------------------------
+# DAILY PUZZLE ROUTE
+# -----------------------------
 @app.get("/daily")
 def daily():
     size = int(request.args.get("size", 9))
     if size not in (4, 9, 16):
         size = 9
+
     holes = {4: 7, 9: 45, 16: 120}[size]
     puzzle = daily_puzzle(size, holes)
+
     return jsonify({
         "date": date.today().isoformat(),
         "size": size,
         "puzzle": puzzle
     })
 
+
 # -----------------------------
-# AUTH ROUTES (WITH XP)
+# AUTH ROUTES
 # -----------------------------
 @app.post("/register")
 def register():
@@ -208,12 +206,12 @@ def register():
 
     try:
         db.execute(
-            "INSERT INTO users (username, password_hash, xp) VALUES (?, ?, 0)",
+            "INSERT INTO users (username, password_hash) VALUES (?, ?)",
             (username, password_hash)
         )
         db.commit()
         session["username"] = username
-        return jsonify({"success": True, "username": username, "xp": 0}), 200
+        return jsonify({"success": True, "username": username}), 200
     except sqlite3.IntegrityError:
         return jsonify({"error": "Username already exists!"}), 400
 
@@ -226,13 +224,13 @@ def login():
 
     db = get_db()
     row = db.execute(
-        "SELECT password_hash, xp FROM users WHERE username = ?",
+        "SELECT password_hash FROM users WHERE username = ?",
         (username,)
     ).fetchone()
 
     if row and check_password_hash(row["password_hash"], password):
         session["username"] = username
-        return jsonify({"success": True, "username": username, "xp": row["xp"]}), 200
+        return jsonify({"success": True, "username": username}), 200
 
     return jsonify({"error": "Invalid username or password"}), 401
 
@@ -246,11 +244,9 @@ def logout():
 @app.get("/check_auth")
 def check_auth():
     if "username" in session:
-        db = get_db()
-        row = db.execute("SELECT xp FROM users WHERE username = ?", (session["username"],)).fetchone()
-        xp = row["xp"] if row else 0
-        return jsonify({"logged_in": True, "username": session["username"], "xp": xp}), 200
+        return jsonify({"logged_in": True, "username": session["username"]}), 200
     return jsonify({"logged_in": False}), 200
+
 
 # -----------------------------
 # APP START
