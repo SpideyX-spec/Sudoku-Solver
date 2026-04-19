@@ -84,7 +84,15 @@
           <label>Mode<select id="modeSelect"><option value="manual">Manual</option><option value="ai">AI</option></select></label>
           <label>Board<select id="sizeSelect"><option value="4">4×4</option><option value="9" selected>9×9</option><option value="16">16×16</option></select></label>
           <label>Difficulty<select id="difficultySelect"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></label>
-          <label>Player<input id="username" type="text" maxlength="24" placeholder="Player name" /></label>
+          
+          <label>Player
+            <div id="authContainer" style="display: flex; gap: 5px;">
+              <button id="openLoginBtn" style="width: 100%; background: #6b4c2a;">Login</button>
+              <span id="loggedInDisplay" class="hidden" style="font-weight: bold; align-self: center;"></span>
+              <button id="logoutBtn" class="hidden" style="padding: 0.2rem 0.5rem; background: #c0392b; font-size: 0.8rem;">Exit</button>
+            </div>
+          </label>
+          
           <label>Region<input id="regionInput" type="text" maxlength="24" placeholder="Region" value="Global" /></label>
         </div>
         <div class="row buttons game-buttons">
@@ -133,14 +141,52 @@
     </section>
 
     <section id="aboutPage" class="page hidden card parchment major-panel">
-      <h2>About Our Game</h2>
-      <p>Sudoku Sage is a modern educational puzzle platform where learners practice logic using manual solving and AI-assisted CSP techniques in a clean interactive format.</p>
+      <div class="about-header" style="text-align: center; margin-bottom: 2rem;">
+        <h2 style="font-size: 2.5rem; margin-bottom: 0.5rem;">The Sudoku Sage Project</h2>
+        <p style="opacity: 0.9; max-width: 80%; margin: 0 auto;">A modern educational puzzle platform powered by intelligent Constraint Satisfaction algorithms, built for the Introduction to AI (CSE11112) course.</p>
+      </div>
+
+      <div class="tech-stack">
+        <span class="tech-pill">⚙️ Python & Flask</span>
+        <span class="tech-pill">🧠 CSP AI Logic</span>
+        <span class="tech-pill">🗄️ SQLite3</span>
+        <span class="tech-pill">🎨 Vanilla JS & CSS3</span>
+      </div>
+
+      <h3 style="text-align: center; color: var(--accent); margin-bottom: 1rem; font-family: 'Cinzel', serif;">Development Team</h3>
       <div class="team-grid">
-        <a class="team-box" href="https://github.com/SpideyX-spec" target="_blank" rel="noreferrer"><strong><span class="member-icon">👤</span> Sulagna Dutta</strong><span><span class="link-icon">🐙</span> GitHub</span></a>
-        <a class="team-box" href="https://github.com/mitraaa-cmd" target="_blank" rel="noreferrer"><strong><span class="member-icon">👤</span> Mitra Sarkar</strong><span><span class="link-icon">🐙</span> GitHub</span></a>
-        <a class="team-box" href="https://github.com/arnab07-git" target="_blank" rel="noreferrer"><strong><span class="member-icon">👤</span> Arnab Kar</strong><span><span class="link-icon">🐙</span> GitHub</span></a>
-        <a class="team-box" href="https://github.com/adarshabiswas34-boop" target="_blank" rel="noreferrer"><strong><span class="member-icon">👤</span> Adarsha Biswas</strong><span><span class="link-icon">🐙</span> GitHub</span></a>
-        <a class="team-box" href="https://drtamal.github.io/Teaching.html" target="_blank" rel="noreferrer"><strong><span class="member-icon">👤</span> Project CO-ordinator Dr Tamal Ghosh</strong><span><span class="link-icon">🌐</span> Profile</span></a>
+        <a class="team-box" href="https://github.com/SpideyX-spec" target="_blank" rel="noreferrer">
+          <div class="member-role">JS Logic & Backend</div>
+          <strong><span class="member-icon">👩‍💻</span> Sulagna Dutta</strong>
+          <div class="member-id">UG/SOET/30/24/045</div>
+          <span class="link-label"><span class="link-icon">🐙</span> GitHub</span>
+        </a>
+        <a class="team-box" href="https://github.com/mitraaa-cmd" target="_blank" rel="noreferrer">
+          <div class="member-role">Frontend UI Design</div>
+          <strong><span class="member-icon">👨‍💻</span> Mitra Sarkar</strong>
+          <div class="member-id">UG/SOET/30/24/039</div>
+          <span class="link-label"><span class="link-icon">🐙</span> GitHub</span>
+        </a>
+        <a class="team-box" href="https://github.com/arnab07-git" target="_blank" rel="noreferrer">
+          <div class="member-role">Database Design</div>
+          <strong><span class="member-icon">👨‍💻</span> Arnab Kar</strong>
+          <div class="member-id">UG/SOET/30/24/084</div>
+          <span class="link-label"><span class="link-icon">🐙</span> GitHub</span>
+        </a>
+        <a class="team-box" href="https://github.com/adarshabiswas34-boop" target="_blank" rel="noreferrer">
+          <div class="member-role">Deploy & GitHub Workflow</div>
+          <strong><span class="member-icon">👨‍💻</span> Adarsha Biswas</strong>
+          <div class="member-id">UG/SOET/30/24/044</div>
+          <span class="link-label"><span class="link-icon">🐙</span> GitHub</span>
+        </a>
+      </div>
+
+      <div class="coordinator-box">
+        <div class="member-role" style="margin-bottom: 0.5rem;">Project Coordinator</div>
+        <a class="team-box special-box" href="https://drtamal.github.io/Teaching.html" target="_blank" rel="noreferrer">
+          <strong><span class="member-icon">🎓</span> Dr. Tamal Ghosh</strong>
+          <span class="link-label"><span class="link-icon">🌐</span> Academic Profile</span>
+        </a>
       </div>
     </section>
 
@@ -171,6 +217,20 @@
       <div class="balloons"><span></span><span></span><span></span><span></span></div>
       <div class="crackers">✨ 🎊 ✨ 🎉</div>
       <button id="closeWinModal">Continue</button>
+    </div>
+  </div>
+
+  <div id="authModal" class="win-modal hidden" aria-live="polite" style="z-index: 50;">
+    <div class="win-card" style="text-align: left; max-width: 320px; margin: 0 auto;">
+      <h3 style="text-align: center; margin-top: 0; font-family: 'Cinzel', serif;">Player Login</h3>
+      <input type="text" id="authUsername" placeholder="Username" style="width: 100%; margin-bottom: 10px; background: rgba(0,0,0,0.05); color: var(--text);" />
+      <input type="password" id="authPassword" placeholder="Password" style="width: 100%; margin-bottom: 10px; background: rgba(0,0,0,0.05); color: var(--text);" />
+      <p id="authError" style="color: #d32f2f; font-size: 0.9rem; text-align: center; min-height: 1.2rem; margin: 0 0 10px 0;"></p>
+      <div style="display: flex; gap: 10px;">
+        <button id="loginSubmitBtn" style="flex: 1;">Login</button>
+        <button id="registerSubmitBtn" style="flex: 1; background: linear-gradient(135deg, #2b9e60, #45d688);">Register</button>
+      </div>
+      <button id="closeAuthModal" style="width: 100%; margin-top: 10px; background: #7f8c8d;">Cancel</button>
     </div>
   </div>
 
